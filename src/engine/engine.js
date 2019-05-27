@@ -1,13 +1,20 @@
 const uuidv4 = require('uuid/v4');
-import { Reactor } from './lib/events';
-import { Audio } from './lib/audio';
-import { Canvas2D } from './environment/canvas';
-import { TouchInterface, TouchHandler } from './ui/touch';
-import { KeyHandler, KeyProcessor } from './ui/keys';
-import { GamepadHandler } from './ui/gamepad';
-import { partition } from './lib/partition';
-import { GameObject } from './model/gameObject';
-import { ImageService } from './utils/image';
+import { Reactor } from '../lib/events';
+import { Audio } from '../lib/audio';
+import { Canvas2D } from '../environment/canvas';
+import { TouchInterface, TouchHandler } from '../ui/touch';
+import { KeyHandler, KeyProcessor } from '../ui/keys';
+import { GamepadHandler } from '../ui/gamepad';
+import { partition } from '../lib/partition';
+import { ImageService } from '../utils/image';
+
+// Expose other types (until I figure out how to do this properly)
+import { GameObject as GO } from '../model/gameObject';
+export const GameObject = GO;
+import { Point2D as P2D } from '../lib/2d';
+export const Point2D = P2D;
+import { Keys as Ks } from '../ui/keys';
+export const Keys = Ks;
 
 class GameConfiguration {
   constructor(userConfiguration, userLifecycle) {
@@ -323,10 +330,6 @@ Engine.prototype.tick = function() {
   this.timerStop('tick');
 
   setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/this.config.fps);  
-}
-
-Engine.prototype.GameObject = () => {
-  return GameObject;
 }
 
 export {

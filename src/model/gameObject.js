@@ -5,7 +5,7 @@ import { AudioEffect } from '../lib/audio';
 import { Sprite } from '../model/sprite';
 import { debug } from 'util';
 
-class GameObject {
+export class GameObject {
 	constructor(conf, position, engine) {
     this.engine = engine;
 		this.ready = false;
@@ -381,6 +381,6 @@ GameObject.prototype.updateAndDraw = function() {
 	}
 };
 
-export {
-  GameObject
-};
+// export {
+//    GameObject
+// };

@@ -1,4 +1,4 @@
-import Point2D from './2d';
+import { Point2D } from './2d';
 
 class Point3D extends Point2D {
   constructor(x, y, z) {
@@ -29,4 +29,6 @@ Point3D.prototype.clone = function() {
   return new Point3D(this._x, this._y, this._z);
 }
 
-export default Point3D;
+export { 
+  Point3D
+};

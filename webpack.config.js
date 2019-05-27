@@ -1,17 +1,20 @@
-const path = require('path');
+'use strict';
 
 module.exports = {
   mode: 'development',
-  entry: './engine.js',
-  devtool: 'inline-source-map',
-  output: {
-    filename: 'eccentric-engine.js',
-    path: path.resolve(__dirname, 'dist')
+  context: __dirname + "/src",
+  entry: {
+      'Engine': './index.js'
   },
-  entry: './model/gameObject.js',
-  devtool: 'inline-source-map',
   output: {
-    filename: 'gameObject.js',
-    path: path.resolve(__dirname, 'dist')
-  }
+    path: __dirname + "/build",
+    filename: "Eccentric.[name].js",
+    libraryTarget: "umd",
+    library: ["EccentricEngine", "[name]"],
+    umdNamedDefine: true
+  },
+  resolve: {
+    extensions: ['.js']
+  },
+  devtool: 'inline-source-map'
 };
