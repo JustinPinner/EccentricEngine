@@ -8,14 +8,6 @@ import { GamepadHandler } from '../ui/gamepad';
 import { partition } from '../lib/partition';
 import { ImageService } from '../utils/image';
 
-// Expose other types (until I figure out how to do this properly)
-import { GameObject as GO } from '../model/gameObject';
-export const GameObject = GO;
-import { Point2D as P2D } from '../lib/2d';
-export const Point2D = P2D;
-import { Keys as Ks } from '../ui/keys';
-export const Keys = Ks;
-
 class GameConfiguration {
   constructor(userConfiguration, userLifecycle) {
     this._game = {
