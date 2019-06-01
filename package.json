@@ -1,5 +1,5 @@
 {
-  "name": "@justinpinner/eccentric-engine",
+  "name": "eccentric-engine",
   "version": "1.0.0",
   "description": "A simple engine for Javascript games",
   "main": "Engine.js",
