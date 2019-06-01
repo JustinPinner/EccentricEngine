@@ -1,13 +1,15 @@
-'use strict';
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
-  mode: 'development',
-  context: __dirname + "/src",
   entry: {
-      'Engine': './index.js'
+    'Engine': './src/index.js'
   },
+  plugins: [
+    new CleanWebpackPlugin(),
+  ],
   output: {
-    path: __dirname + "/build",
+    path: path.resolve(__dirname, 'dist'),
     filename: "Eccentric.[name].js",
     libraryTarget: "umd",
     library: ["EccentricEngine", "[name]"],
@@ -15,6 +17,5 @@ module.exports = {
   },
   resolve: {
     extensions: ['.js']
-  },
-  devtool: 'inline-source-map'
+  }
 };

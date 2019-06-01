@@ -1,28 +1,31 @@
 {
   "name": "eccentric-engine",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A simple engine for Javascript games",
-  "private": true,
+  "main": "webpack.common.js",
+  "dependencies": {
+    "webpack": "^4.32.2",
+    "uuid": "^3.3.2",
+    "webpack-cli": "^3.3.2"
+  },
+  "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "html-webpack-plugin": "^3.2.0",
+    "webpack-merge": "^4.2.1"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack"
+    "test": "echo \"No tests specified\"",
+    "build-dev": "webpack --config webpack.dev.js",
+    "build-prod": "webpack --config webpack.prod.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JustinPinner/EccentricEngine.git"
   },
-  "keywords": [],
-  "author": "Justin Pinner",
+  "author": "Justin Pinner <eccentric-engine@justinpinner.net>",
   "license": "GPL-3.0-only",
   "bugs": {
     "url": "https://github.com/JustinPinner/EccentricEngine/issues"
   },
-  "homepage": "https://github.com/JustinPinner/EccentricEngine#readme",
-  "devDependencies": {
-    "webpack": "^4.32.2",
-    "webpack-cli": "^3.3.2"
-  },
-  "dependencies": {
-    "uuid": "^3.3.2"
-  }
+  "homepage": "https://github.com/JustinPinner/EccentricEngine#readme"
 }
