@@ -10,7 +10,7 @@ module.exports = {
   ],
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: "Eccentric.[name].js",
+    filename: "[name].js",
     libraryTarget: "umd",
     library: ["EccentricEngine", "[name]"],
     umdNamedDefine: true
