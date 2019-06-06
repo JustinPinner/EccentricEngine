@@ -1,6 +1,6 @@
 {
   "name": "eccentric-engine",
-  "version": "1.0.0",
+  "version": "##VERSION",
   "description": "A simple engine for Javascript games",
   "main": "Engine.js",
   "dependencies": {
@@ -19,8 +19,8 @@
     "build-prod": "webpack --config webpack.prod.js"
   },
   "files": [
-    "dist/Engine.js",
-    "dist/Engine.js.map"
+    "Engine.js",
+    "Engine.js.map"
   ],
   "repository": {
     "type": "git",
