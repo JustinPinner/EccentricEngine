@@ -7,6 +7,7 @@ import { KeyHandler, KeyProcessor } from '../ui/keys';
 import { GamepadHandler } from '../ui/gamepad';
 import { partition } from '../lib/partition';
 import { ImageService } from '../utils/image';
+import { TimerSystem } from '../lib/timer';
 
 class GameConfiguration {
   constructor(userConfiguration, userLifecycle) {
@@ -49,6 +50,7 @@ class Engine {
     this.id = 'ENGINE';
     this.eventSystem = new Reactor();
     this.audioSystem = new Audio();
+    this.timers = new TimerSystem(this);
     this.configuration = new GameConfiguration(userConfig, userLifecycle);
     this.config = this.configuration.config;
     this.images = new ImageService();
@@ -117,7 +119,7 @@ class Engine {
   
 }
 
-Engine.prototype.timerStart = function(identity) {
+Engine.prototype.timingStart = function(identity) {
   const now = Date.now();
   if (!this.timing[identity]) {
     this.timing[identity] = {};
@@ -128,7 +130,7 @@ Engine.prototype.timerStart = function(identity) {
   this.timing[identity].interval = interval;
 }
 
-Engine.prototype.timerStop = function(identity) {
+Engine.prototype.timingStop = function(identity) {
   const now = Date.now();
   if (!this.timing[identity]) {
     return;
@@ -215,7 +217,7 @@ Engine.prototype.flushLoggedEvents = function() {
 Engine.prototype.setup = function() {
   if (this.setupDone) return; 
 
-  this.timerStart('setup');
+  this.timingStart('setup');
 
   this.keyHandler = this.config.game.enableKeyboardUI ? new KeyHandler(this.config.game.keyProcessor, this) : undefined;
 
@@ -242,16 +244,16 @@ Engine.prototype.setup = function() {
   if (this.config.enableTouchUI && this.hasTouchSupport) {
     this.touchInterface.init();
   }
-  this.timerStart('onSetup');
+  this.timingStart('onSetup');
   this.onSetup(this);
-  this.timerStop('onSetup');
+  this.timingStop('onSetup');
 
   this.setupDone = true;
-  this.timerStop('setup');
+  this.timingStop('setup');
 }
 
 Engine.prototype.start = function() {
-  this.timerStart('start');
+  this.timingStart('start');
  
   if (this.started) return true;
 
@@ -263,21 +265,21 @@ Engine.prototype.start = function() {
   }
   
   // run custom user code
-  this.timerStart('onStart');
+  this.timingStart('onStart');
   this.onStart(this);
-  this.timerStop('onStart');
+  this.timingStop('onStart');
   
   requestAnimationFrame(this.tick.bind(this));
   
   this.started = true;
-  this.timerStop('start');
+  this.timingStop('start');
 }
 
 Engine.prototype.tick = function() {
   if (!this.isReady) {
     return;
   }
-  this.timerStart('tick');
+  this.timingStart('tick');
   this.ticks += 1;
 
   this.refreshUi();
@@ -315,11 +317,11 @@ Engine.prototype.tick = function() {
   }
 
   // run custom user code
-  this.timerStart('onTick');
+  this.timingStart('onTick');
   this.onTick(this);
-  this.timerStop('onTick');
+  this.timingStop('onTick');
 
-  this.timerStop('tick');
+  this.timingStop('tick');
 
   setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/this.config.fps);  
 }
