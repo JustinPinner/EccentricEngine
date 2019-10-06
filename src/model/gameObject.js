@@ -11,7 +11,8 @@ export class GameObject {
 		this.ready = false;
     this.disposable = false;
     this.drawable = false;    
-		this.id = uuidv4();
+    this.id = uuidv4();
+    this.maxStartupMillis = 500;  // <- tune if this.initDone is being triggered too soon or too late
 		this.engine.eventSystem.registerEvent(`${this.id}-Loaded`);
 		this.engine.eventSystem.addEventListener(`${this.id}-Loaded`, this.init.bind(this));
 		this.conf = conf;
@@ -65,8 +66,11 @@ export class GameObject {
   }
 }
 
-GameObject.prototype.eventListener = function (thisObj, evt) { 
-	console.log(`${this.id} GameObject eventListener captured event for obj: ${thisObj.id} with args: ${evt}`);
+GameObject.prototype.eventListener = function (thisObj, evt) {
+  const thisId = this.id;
+  const otherId = thisObj.id == thisId ? 'itself' : `obj id:${otherId}`;
+  const eventDescription = `${evt.target} -> ${evt.action}`;
+	console.log(`GameObject eventListener on ${thisId} (type ${this.type}) caught an event of type ${eventDescription} intended for ${otherId}. Maybe consider implementing a handler in the descendant object's class.`);
 }
 
 GameObject.prototype.rotate = function(degrees) {
@@ -135,9 +139,15 @@ GameObject.prototype.init = function() {
 		this.engine.eventSystem.registerEvent(`${this.id}FSM`);
 		this.engine.eventSystem.addEventListener(`${this.id}FSM`, this.fsm.eventListener.bind(this.fsm, this));
 	}
-	this.engine.eventSystem.deRegisterEvent(`${this.id}-Loaded`);
+  this.engine.timers.add(`${this.id}-InitDone`, null, this.maxStartupMillis, this.initDone.bind(this), this);
+  this.engine.timers.start(`${this.id}-InitDone`);
   this.ready = true;
   this.canDraw = true;
+}
+
+GameObject.prototype.initDone = function() {
+  this.engine.eventSystem.deRegisterEvent(`${this.id}-Loaded`);
+  this.engine.timers.cancel(`${this.id}-InitDone`);
 }
 
 GameObject.prototype.scaleWidth = function(dim) {
