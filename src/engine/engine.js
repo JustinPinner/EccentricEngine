@@ -8,6 +8,7 @@ import { GamepadHandler } from '../ui/gamepad';
 import { partition } from '../lib/partition';
 import { ImageService } from '../utils/image';
 import { TimerSystem } from '../lib/timer';
+import { Formatter } from '../lib/format';
 
 class GameConfiguration {
   constructor(userConfiguration, userLifecycle) {
@@ -48,11 +49,13 @@ class GameConfiguration {
 class Engine {
   constructor(userConfig, userLifecycle) {
     this.id = 'ENGINE';
-    this.eventSystem = new Reactor();
-    this.audioSystem = new Audio();
-    this.timers = new TimerSystem(this);
+    this.formatter = new Formatter();
     this.configuration = new GameConfiguration(userConfig, userLifecycle);
     this.config = this.configuration.config;
+    this.debug = this.config.debugEngine || false;
+    this.eventSystem = new Reactor(this.debug);
+    this.audioSystem = new Audio();
+    this.timers = new TimerSystem(this, this.debug);
     this.images = new ImageService();
 		this.eventSystem.registerEvent(this.id);
 		this.eventSystem.addEventListener(this.id, this.config.game.eventListener.bind(this, this));
@@ -165,6 +168,14 @@ Engine.prototype.registerObject = function(gameObject) {
   }
   this.gameObjects.push(gameObject);
   return true;
+}
+
+Engine.prototype.deleteObjectById = function(id) {
+  const obj = this.getObjectById(id);
+  if (obj) {
+    obj.disposable = true;
+  }
+  return obj && obj.disposable == true; 
 }
 
 Engine.prototype.getObjectById = function(id) {
