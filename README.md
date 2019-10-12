@@ -11,6 +11,8 @@ TODO!
 
 But in the meantime, and in the absence of any useful docs, here's my work-in-progress [astrowars](https://github.com/JustinPinner/astrowars) example of how the engine can be (ab)used.
 
+There's also a fledgling [EccentricEngineDemos repo here](https://github.com/JustinPinner/EccentricEngineDemos) to which I'll add other demos as I make them.
+
 ## Versions
 
 1.0.3
