@@ -1,5 +1,5 @@
 
-import { Point2D, Scrollable } from '../lib/2d';
+import { Point2D, Scrollable, Math2D } from '../lib/lib2d';
 
 const defaultConfig = {
 	x: 0,
@@ -153,11 +153,11 @@ Canvas2D.prototype.contains = function(x, y, width, height, heading) {
 	const cy = y1 + height / 2;
 
 	const p1 = heading ? 
-		rotatePoint(cx, cy, x1, y1, heading) :
+		Math2D.rotatePoint(cx, cy, x1, y1, heading) :
 		new Point2D(x1, y1);
 	
 	const p2 = heading ?
-		rotatePoint(cx, cy, x2, y2, heading) :
+    Math2D.rotatePoint(cx, cy, x2, y2, heading) :
 		new Point2D(x2, y2);
 
 	const isContained =

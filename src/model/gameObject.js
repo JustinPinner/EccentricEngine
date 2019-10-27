@@ -1,11 +1,11 @@
 const uuidv4 = require('uuid/v4');
-import { Vector2D, Point2D } from '../lib/2d';
+import { Vector2D, Point2D, Math2D } from '../lib/lib2d';
 import { FSM } from '../lib/fsm';
 import { AudioEffect } from '../lib/audio';
 import { Sprite } from '../model/sprite';
 import { debug } from 'util';
 
-export class GameObject {
+class GameObject {
 	constructor(conf, position, engine) {
     this.engine = engine;
 		this.ready = false;
@@ -333,7 +333,7 @@ GameObject.prototype.draw = function() {
 	viewport.context.save();
 	//viewport.context.translate(this.centre.x, this.centre.y);
 	if (this.rotation) {
-		viewport.context.rotate(degreesToRadians(this.rotation + 90));
+		viewport.context.rotate(Math2D.degreesToRadians(this.rotation + 90));
 	}
 	viewport.context.fillStyle = this.conf.colour ? this.conf.colour : '#ffffff';
 
@@ -391,6 +391,6 @@ GameObject.prototype.updateAndDraw = function() {
 	}
 };
 
-// export {
-//    GameObject
-// };
+export {
+  GameObject
+};

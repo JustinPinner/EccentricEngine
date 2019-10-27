@@ -1,8 +1,8 @@
 
 export * from './engine/engine';
 export * from './environment/canvas';
-export * from './lib/2d';
-export * from './lib/3d';
+export * from './lib/lib2d';
+export * from './lib/lib3d';
 export * from './lib/audio';
 export * from './lib/events';
 export * from './lib/format';

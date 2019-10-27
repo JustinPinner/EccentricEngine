@@ -15,6 +15,16 @@ There's also a fledgling [EccentricEngineDemos repo here](https://github.com/Jus
 
 ## Versions
 
+1.1.0
+=====
+* A potentially significant update in preparation for migrating Elite Arcade over to this engine
+* Renamed `lib/2d.js` to `lib/lib2d.js`
+* 2D maths functions are now exposed through a Math2D object and any imports and calls of those functions in user code will need to be updated. E.g. `angleBetween(x1, y1, x2, y2)` should now be referenced via `Math2D.angleBetween(x1, y1, x2, y2)`
+* Renamed `Coordinate` as `Coordinate2D` and relocated into `lib2d.js`
+* Renamed `lib/3d.js` to `lib/lib3d.js`
+* Renamed `Coordinate3d` as `Coordinate3D` and relocated into `lib3d.js`
+* Similarly renamed `Coordinates3d` as `Coordinates3D` and moved into `lib3d.js`
+
 1.0.3
 =====
 * Updated dependencies
@@ -24,5 +34,3 @@ There's also a fledgling [EccentricEngineDemos repo here](https://github.com/Jus
 * Added debugging to see what's going on inside events, timers and other engine functionality. Activate it by adding a `?debug` search param to your game url in your browser
 * Added a `Logger` class that sends debug info (see above) to the browser console
 * Changed the way that objects deregister their `xxx-Loaded` event - added a timed call to its `initDone` method. You now have 500ms to complete your custom initialisation code in game objects.
-
-
