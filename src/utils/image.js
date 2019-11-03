@@ -1,7 +1,7 @@
 
 class ImageService {
-	constructor() {
-		this.defaultPath = './assets/'
+	constructor(defaultImagePath) {
+		this.defaultPath = defaultImagePath;
 		this._loadedImages = [];
 	}
 }

@@ -75,4 +75,8 @@ FSM.prototype.transition = function(newState, force) {
   }
 }
 
+FSM.prototype.collisionsEnabled = function() {
+  return this.state.detectCollisions;
+}
+
 export { FSM };

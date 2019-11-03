@@ -1,5 +1,6 @@
 
 import { Point2D, Scrollable, Math2D } from '../lib/lib2d';
+import { Coordinate3D } from '../lib/lib3d';
 
 const defaultConfig = {
 	x: 0,
@@ -188,6 +189,46 @@ Canvas2D.prototype.containsObject = function(obj) {
 		);
 	}
 };
+
+Canvas2D.prototype.trackFocussedObject = function() {
+	this.coordinates.x = this.focussedObject.coordinates.centre.x - this.width / 2;
+	this.coordinates.y = this.focussedObject.coordinates.centre.y - this.height / 2;	
+}
+
+Canvas2D.prototype.drawOrigin = function(forObject) {
+	if (!forObject || !this.coordinates) {
+		return new Coordinate3D(0,0,0);
+	}
+	const objOrigin = (forObject.coordinates && forObject.coordinates.origin) || forObject.coordinates;
+	return new Coordinate3D(
+		objOrigin.x + -this.coordinates.x,
+		objOrigin.y + -this.coordinates.y,
+		objOrigin.z || 0
+	);
+};
+
+Canvas2D.prototype.drawCentre = function(forObject) {
+	if (!forObject || !this.coordinates) {
+		return new Coordinate3D(0,0,0);
+	}
+	const objCentre = (forObject.coordinates && forObject.coordinates.centre) || forObject.coordinates;
+	return new Coordinate3D(
+		objCentre.x + -this.coordinates.x,
+		objCentre.y + -this.coordinates.y,
+		objCentre.z || 0
+	);	
+};
+
+Canvas2D.prototype.isVisible = function(gameObject) {
+	const _x = (gameObject.coordinates && gameObject.coordinates.origin && gameObject.coordinates.origin.x) || gameObject.coordinates.x;
+	const _y = (gameObject.coordinates && gameObject.coordinates.origin && gameObject.coordinates.origin.y) || gameObject.coordinates.y;
+	return(
+		_x >= this.coordinates.x &&
+		_y >= this.coordinates.y &&
+		_x <= this.coordinates.x + this.width &&
+		_y <= this.coordinates.y + this.height
+	);
+}
 
 export {
   Canvas2D

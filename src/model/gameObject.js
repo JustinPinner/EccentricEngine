@@ -6,7 +6,7 @@ import { Sprite } from '../model/sprite';
 import { debug } from 'util';
 
 class GameObject {
-	constructor(conf, position, engine) {
+	constructor(conf, position, engine, deferEvents) {
     this.engine = engine;
 		this.ready = false;
     this.disposable = false;
@@ -17,7 +17,7 @@ class GameObject {
 		this.engine.eventSystem.addEventListener(`${this.id}-Loaded`, this.init.bind(this));
 		this.conf = conf;
     this.conf.position = position;
-		this.coordinates = this.conf.position ? new Point2D(this.conf.position.x, this.conf.position.y) : undefined;
+		this.coordinates = this.conf.position ? new Point2D(this.conf.position.x, this.conf.position.y) : {};
 		this.velocity = new Vector2D(
 			(this.conf.initialVelocity && this.conf.initialVelocity.x) ? this.conf.initialVelocity.x : 0, 
 			(this.conf.initialVelocity && this.conf.initialVelocity.y) ? this.conf.initialVelocity.y : 0
@@ -30,14 +30,16 @@ class GameObject {
     this.scale = this.conf.scale;
 		this.mass = this.conf.mass;
     this.collisionCentres = this.conf.collisionCentres;
-		this.rotation = 0;
-		this.update = conf.update.bind(this, this);
+    this.rotation = 0;
+    if (conf.update) {
+		  this.update = conf.update.bind(this, this);
+    }
 		this.fsm = conf.fsmStates ? new FSM(this, conf.fsmStates) : undefined;
 		this.engine.eventSystem.registerEvent(`${this.id}`);
 		this.engine.eventSystem.addEventListener(`${this.id}`, this.eventListener.bind(this, this));
 		this.engine.registerObject(this);		
 		// v-- this must be last --v
-		this.engine.eventSystem.dispatchEvent(`${this.id}-Loaded`);
+    if (!deferEvents) this.engine.eventSystem.dispatchEvent(`${this.id}-Loaded`);
 	}
 	get type() {
 		return this.conf.type;
@@ -61,6 +63,21 @@ class GameObject {
   get canDraw() {
     return this.drawable;
   }
+  get model() {
+    return this.conf;
+  }
+  get canCollide() {
+    let status = false;
+    if (this.conf.detectCollisions) {
+      status = this.conf.detectCollisions == true;
+    }
+    if (this.fsm && this.fsm.collisionsEnabled) {
+      status = true;
+    }
+    // ??? this !== game.player.ship;
+    return status;
+  }
+
   set canDraw(boolValue) {
     this.drawable = boolValue;
   }
@@ -269,45 +286,44 @@ GameObject.prototype.collide = function(otherGameObject) {
 }
 
 GameObject.prototype.collisionDetect = function(x, y) {
-	if ((!this._fsm || !this._fsm.state || !this._fsm.state.detectCollisions) && this !== game.localPlayer.ship) {
+	if (!this.canCollide) {
 		return;
 	}
-	const self = this;
-	const candidates = game.objects.filter(function(obj) {
-		if (obj === self || 
-			obj instanceof Particle ||
-			(obj instanceof Munition && obj.shooter === self) ||
-			(self instanceof Munition && self.shooter === obj) ||
-			(obj.fsm && obj.fsm.state && !obj.fsm.state.detectCollisions)) {
-			return false;
-		}
-		if (obj instanceof ParticleEffect || self instanceof ParticleEffect) {
-			return false;
-		}
-		// cannot collide if at different altitudes
-		if (self.coordinates.centre.z !== obj.coordinates.centre.z) {
-			return;
-		}
-		// draw a circle to enclose the whole object
+  const self = this;
+  // eliminate anything that doesn't collide
+	const candidates = this.engine.objects.filter(function(obj) {
+    return obj !== self && 
+      obj.canCollide && 
+      (self.coordinates && self.coordinates.centre.z) &&
+      (obj.coordinates && obj.coordinates.centre.z) &&
+      self.coordinates.centre.z == obj.coordinates.centre.z;
+  });
+  // collect what's left and within local proximity
+  const localCandidates = candidates.filter(function(obj){
+		// draw a circle to enclose the whole object (self)
 		const selfCirc = {
 			x: self.coordinates.centre.x,
 			y: self.coordinates.centre.y,
 			r: (self.width > self.height ?  self.width : self.height) / 2
-		};
+    };
+    // and again for the collision candidate
 		const objCirc = {
 			x: obj.coordinates.centre.x,
 			y: obj.coordinates.centre.y,
 			r: (obj.width > obj.height ? obj.width : obj.height) / 2
 		};
-		const dx = selfCirc.x - objCirc.x;
+    // test for proximity
+    const dx = selfCirc.x - objCirc.x;
 		const dy = selfCirc.y - objCirc.y;
 		const distance = Math.sqrt((dx * dx) + (dy * dy));		
 	
 		return distance <= selfCirc.r + objCirc.r;
-	});
-	if (candidates.length > 0) {
-		for (var c = 0; c < candidates.length; c++) {
-			self.collide(candidates[c]);
+
+  })
+  // run fine-detail checks for any collision candidates
+  if (localCandidates.length > 0) {
+		for (var c = 0; c < localCandidates.length; c++) {
+			self.collide(localCandidates[c]);
 		}		
 	}
 }

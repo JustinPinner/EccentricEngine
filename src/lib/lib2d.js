@@ -83,7 +83,7 @@ Vector2D.prototype.distance = function(v2d) {
 };
 
 Vector2D.prototype.clone = function() {
-  return new Vector2d(this._x, this._y);
+  return new Vector2D(this._x, this._y);
 };
 
 class Coordinate2D extends Point2D {
@@ -130,8 +130,8 @@ class Scrollable {
 
 const Math2D = {
   distanceBetweenObjects: function(objA, objB) {
-    const dx = (objA.coordinates.x + objA.centre.x) - (objB.coordinates.x + objB.centre.x);
-    const dy = (objA.coordinates.y + objA.centre.y) - (objB.coordinates.y + objB.centre.y);
+    const dx = objA.coordinates.centre.x - objB.coordinates.centre.x;
+    const dy = objA.coordinates.centre.y - objB.coordinates.centre.y;
     return Math.sqrt((dx * dx) + (dy * dy));  
   },
   distanceBetweenPoints: function(pointA, pointB) {
@@ -159,7 +159,7 @@ const Math2D = {
     const angle = this.degreesToRadians(deg);
     const s = Math.sin(angle);
     const c = Math.cos(angle);
-    const p = new Point2d(px,py);
+    const p = new Point2D(px,py);
   
     // translate point back to origin:
     p.x -= cx;

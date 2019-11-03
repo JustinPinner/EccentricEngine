@@ -15,6 +15,7 @@ class GameConfiguration {
     this._game = {
       version: 0.0,
       fps: 30,
+      defaultImagePath: './assets',
       canvasses: {},
       touchUI: {},
       enableTouchUI: 'auto',
@@ -56,13 +57,13 @@ class Engine {
     this.eventSystem = new Reactor(this.debug);
     this.audioSystem = new Audio();
     this.timers = new TimerSystem(this, this.debug);
-    this.images = new ImageService();
+    this.images = new ImageService(this.config.game.defaultImagePath);
 		this.eventSystem.registerEvent(this.id);
 		this.eventSystem.addEventListener(this.id, this.config.game.eventListener.bind(this, this));
     this.onSetup = this.config.game.lifeCycle.onSetup;
     this.onStart = this.config.game.lifeCycle.onStart;
     this.onTick = this.config.game.lifeCycle.onTick;
-    this.player = null;
+    this.playerObj = null;
     this.loggedEvents = [];
     this.ticks = 0;   
     this.hasTouchSupport = (window.navigator && window.navigator.maxTouchPoints > 0);
@@ -114,10 +115,22 @@ class Engine {
     return this.gamepadHandler.gamepad;
   }
 
+  get touchUI() {
+    return this.touchHandler;
+  }
+
+  get keyboard() {
+    return this.keyHandler;
+  }
+
+  get player() {
+    return this.playerObj;
+  }
+
   /* setters */
 
-  set localPlayer(player) {
-    this.player = player;
+  set player(player) {
+    this.playerObj = player;
   }
   
 }
@@ -207,7 +220,7 @@ Engine.prototype.filterObjects = function(objectTypeOrTypes) {
   if (objectTypeOrTypes) {
     return this.objects.filter(function(obj) {
       return objectTypeOrTypes instanceof Array ? 
-        objectTypeOrTypes.includes(obj.constructor) : 
+        objectTypeOrTypes.filter(function(t){return obj instanceof t}).length > 0 : 
         obj instanceof objectTypeOrTypes;
     })
   }
@@ -223,6 +236,10 @@ Engine.prototype.flushLoggedEvents = function() {
     console.log(this.loggedEvents[ev]);
   }
   this.loggedEvents = [];
+}
+
+Engine.prototype.focusOn = function(canvasId, gameObject) {
+  this.canvas(canvasId).focus(gameObject);
 }
 
 Engine.prototype.setup = function() {
@@ -323,8 +340,10 @@ Engine.prototype.tick = function() {
         }
       }
     }
-    gameObject.update();
-    gameObject.draw();
+    if (gameObject.ready) {
+      gameObject.update();
+      gameObject.draw();  
+    }
   }
 
   // run custom user code
