@@ -3,7 +3,6 @@ import { Vector2D, Point2D, Math2D } from '../lib/lib2d';
 import { FSM } from '../lib/fsm';
 import { AudioEffect } from '../lib/audio';
 import { Sprite } from '../model/sprite';
-import { debug } from 'util';
 
 class GameObject {
 	constructor(conf, position, engine, deferEvents) {
@@ -347,7 +346,6 @@ GameObject.prototype.draw = function() {
   if (!viewport || !viewport.isReady) return;
 
 	viewport.context.save();
-	//viewport.context.translate(this.centre.x, this.centre.y);
 	if (this.rotation) {
 		viewport.context.rotate(Math2D.degreesToRadians(this.rotation + 90));
 	}

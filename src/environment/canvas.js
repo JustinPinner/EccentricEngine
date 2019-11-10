@@ -17,7 +17,8 @@ const defaultConfig = {
 	canvas: {
 		selector: '#canvas-element',
 	},
-	alias: 'canvas'
+  alias: 'canvas',
+  scroll: false
 };
 
 class Canvas2D {
@@ -31,8 +32,7 @@ class Canvas2D {
 		this.canvasDrawable = {from: new Point2D(0,0), to: new Point2D(this.config.width, this.config.height)},
 		this.canvasContext = null;
 		this.canvasImage = null;
-		this.canvasScrollScale = 0;
-		this.canvasScrollData = new Scrollable(null, 0, 0);
+		this.canvasScrollController = this.config.scroll && this.config.scroll == true ? new Scrollable(null, 0, 0) : undefined;
 		this.canvasFocusObject = null;
 		this.canvasAlias = this.config.alias;
 		// size and style wrapper div
@@ -69,7 +69,10 @@ class Canvas2D {
 	}
 	get coordinates() {
 		return this.canvasCoordinates;
-	}
+  }
+  get image() {
+    return this.canvasImage;
+  }
 	get selector() {
 		return this.config.canvas.selector;
 	}
@@ -79,19 +82,25 @@ class Canvas2D {
 	get centre() {
 		return new Point2D(this.canvasCordinates.x + (this.canvasWidth / 2), this.canvasCoordinates.y + (this.canvasHeight / 2));
 	}
-	get scrollData() {
-		return this.canvasScrollData;
+	get scroller() {
+		return this.canvasScrollController;
 	}
 	get focussedObject() {
 		return this.canvasFocusObject;
 	}
 
-	/* setters */
+  /* setters */
+  set image(img) {
+    this.canvasImage = img;
+  }
+  set coordinates(newCoords) {
+    this.canvasCoordinates = newCoords;
+  }
 	set context(contextRef) {
 		this.canvasContext = contextRef;
 	}
-	set scrollData(scrollDataObj) {
-		this.canvasScrollData = scrollDataObj;
+	set scroller(scrollController) {
+		this.canvasScrollController = scrollController;
 	}
 };
 
@@ -112,6 +121,17 @@ Canvas2D.prototype.init = function(fillImage, callBack) {
 	this.canvasReady = !!this.canvasContext;	
 };
 
+Canvas2D.prototype.refresh = function() {
+  if (this.config.refresh) {
+    this.config.refresh(this);
+    return;
+  }
+  this.clear();
+  this.trackFocussedObject();
+  this.scroll();
+  this.draw();
+}
+
 Canvas2D.prototype.clear = function(fromPoint, toPoint) {
 	if (!this.canvasContext) return;
 	this.canvasContext.clearRect((fromPoint && fromPoint.x) || 0, 
@@ -123,26 +143,29 @@ Canvas2D.prototype.clear = function(fromPoint, toPoint) {
 
 Canvas2D.prototype.draw = function() {
 	if (!this.canvasReady || !this.canvasContext) return;
-	this.clear();
-	this.canvasImage && this.canvasContext.drawImage(
-		this.canvasImage, 
-		0,
-		0,
-		this.canvasWidth, 
-		this.canvasHeight);
+  this.canvasImage && this.canvasContext.drawImage(
+    this.canvasImage, 
+    0,
+    0,
+    this.canvasWidth, 
+    this.canvasHeight);  
 };
 
-Canvas2D.prototype.focus = function(gameObject) {
-	if (!gameObject) return;
-	if (this.canvasFocusObject === gameObject) return;
-	this.canvasFocusObject = gameObject;
+Canvas2D.prototype.setFocus = function(gameObject) {
+  if (!gameObject) return;
+	// if (this.canvasFocusObject === gameObject) return;
+  this.canvasFocusObject = gameObject;
+  if (this.scroller) {
+    this.scroller.anchor = gameObject;
+    this.scroller.velocity = gameObject.velocity.invert();
+  }
 	this.canvasCoordinates.x = gameObject.coordinates.centre.x - (this.canvasWidth / 2);
 	this.canvasCoordinates.y = gameObject.coordinates.centre.y - (this.canvasHeight / 2);
 };
 
 Canvas2D.prototype.scroll = function () {
-	this.canvasCoordinates.x += this.canvasScrollData.velocity.x;
-	this.canvasCoordinates.y += this.canvasScrollData.velocity.y;
+  if (!this.scroller) return;
+  this.coordinates.add(this.scroller.velocity);
 };
 
 Canvas2D.prototype.contains = function(x, y, width, height, heading) {
@@ -191,7 +214,8 @@ Canvas2D.prototype.containsObject = function(obj) {
 };
 
 Canvas2D.prototype.trackFocussedObject = function() {
-	this.coordinates.x = this.focussedObject.coordinates.centre.x - this.width / 2;
+  if (!this.focussedObject) return;
+  this.coordinates.x = this.focussedObject.coordinates.centre.x - this.width / 2;
 	this.coordinates.y = this.focussedObject.coordinates.centre.y - this.height / 2;	
 }
 

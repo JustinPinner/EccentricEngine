@@ -162,7 +162,7 @@ Engine.prototype.canvas = function(alias) {
 
 Engine.prototype.refreshUi = function() {
   for (const cnv in this.canvasses) {
-    this.canvasses[cnv].draw();
+    this.canvasses[cnv].refresh();
   }
 }
 
@@ -238,8 +238,10 @@ Engine.prototype.flushLoggedEvents = function() {
   this.loggedEvents = [];
 }
 
-Engine.prototype.focusOn = function(canvasId, gameObject) {
-  this.canvas(canvasId).focus(gameObject);
+Engine.prototype.focusOn = function(gameObject) {
+  for (const c in this.canvasses) {
+    this.canvasses[c].setFocus(gameObject);
+  }
 }
 
 Engine.prototype.setup = function() {

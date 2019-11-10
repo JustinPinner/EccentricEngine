@@ -36,12 +36,21 @@ Point2D.prototype.rotate = function(p2dCentre, degrees) {
   this._y = r[1];
 };
 
+Point2D.prototype.invert = function() {
+  return new Point2D(-this.x, -this.y);
+}
+
+Point2D.prototype.add = function(vector2D) {
+  this.x += vector2D.x;
+  this.y += vector2D.y;
+}
+
 class Vector2D extends Point2D {
   constructor(x, y) {
-      super(x, y);
+    super(x, y);
   }
   get length() {
-      return Math.sqrt(Math.abs(this._x)^2 + Math.abs(this._y)^2);
+    return Math.sqrt(Math.abs(this._x)^2 + Math.abs(this._y)^2);
   }
 }
 
@@ -56,8 +65,8 @@ Vector2D.prototype.subtract = function(v2d) {
 };
 
 Vector2D.prototype.scale = function(n) {
-  this._x *= n;
-  this._y *= n;
+  this._x *= n || 1;
+  this._y *= n || 1;
 };
 
 Vector2D.prototype.dot = function(v2d) {
@@ -75,6 +84,10 @@ Vector2D.prototype.normalize = function() {
   this._x *= len;
   this._y *= len;
 };
+
+Vector2D.prototype.invert = function() {
+  return new Vector2D(-this.x, -this.y);
+}
 
 Vector2D.prototype.distance = function(v2d) {
   const x = this._x - v2d.x;
@@ -111,21 +124,36 @@ Coordinate2D.prototype.rotate = function(centre, degrees) {
 
 class Scrollable {
 	constructor(anchorObject, vx, vy) {
+    this._scale = 1;
 		this._anchor = anchorObject;
-		this._velocity = new Point2D(this._anchor && (this._anchor.velocity.x || vx || 0), this._anchor && (this._anchor.velocity.y || vy || 0));
+		this._velocity = new Vector2D(this._anchor && (this._anchor.velocity.x || vx || 0), this._anchor && (this._anchor.velocity.y || vy || 0));
 	}
 	get anchor() {
 		return this._anchor;
 	}
 	get velocity() {
-		return this._velocity;
-	}
+    const currentV = this.anchor ? this.anchor.velocity.clone().invert() : this._velocity.clone();
+    currentV.scale(this.scale);
+    return currentV;
+  }
+  get scale() {
+    return this._scale;
+  }
+  get focus() {
+    return this._anchorObject;
+  }
 	set anchor(anchorObject) {
 		this._anchor = anchorObject;
 	}
-	set velocity(point2D) {
-		this._velocity = point2D;
-	}
+	set velocity(vector2D) {
+		this._velocity = vector2D;
+  }
+  set scale(scaleVal) {
+    this._scale = scaleVal;
+  }
+  set focus(gameObject) {
+    this._anchorObject = gameObject;
+  }
 }
 
 const Math2D = {
