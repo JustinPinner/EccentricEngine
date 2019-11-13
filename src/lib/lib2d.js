@@ -123,8 +123,8 @@ Coordinate2D.prototype.rotate = function(centre, degrees) {
 };
 
 class Scrollable {
-	constructor(anchorObject, vx, vy) {
-    this._scale = 1;
+	constructor(anchorObject, vx, vy, s) {
+    this._scale = s || 1;
 		this._anchor = anchorObject;
 		this._velocity = new Vector2D(this._anchor && (this._anchor.velocity.x || vx || 0), this._anchor && (this._anchor.velocity.y || vy || 0));
 	}

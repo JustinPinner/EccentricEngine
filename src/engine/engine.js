@@ -355,7 +355,7 @@ Engine.prototype.tick = function() {
 
   this.timingStop('tick');
 
-  setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/this.config.fps);  
+  setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/(this.config.game.fps || 30));  
 }
 
 export {

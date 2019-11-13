@@ -32,7 +32,7 @@ class Canvas2D {
 		this.canvasDrawable = {from: new Point2D(0,0), to: new Point2D(this.config.width, this.config.height)},
 		this.canvasContext = null;
 		this.canvasImage = null;
-		this.canvasScrollController = this.config.scroll && this.config.scroll == true ? new Scrollable(null, 0, 0) : undefined;
+		this.canvasScrollController = this.config.scroll && this.config.scroll == true ? new Scrollable(null, 0, 0, this.config.scrollScale) : undefined;
 		this.canvasFocusObject = null;
 		this.canvasAlias = this.config.alias;
 		// size and style wrapper div
@@ -118,7 +118,8 @@ Canvas2D.prototype.init = function(fillImage, callBack) {
 	if (fillImage || this.config.canvas.image) {
 		this.canvasImage = this.loadImage((fillImage || this.config.canvas.image), callBack);		
 	}
-	this.canvasReady = !!this.canvasContext;	
+  this.canvasReady = !!this.canvasContext;
+  this.draw();
 };
 
 Canvas2D.prototype.refresh = function() {
@@ -142,13 +143,45 @@ Canvas2D.prototype.clear = function(fromPoint, toPoint) {
 };
 
 Canvas2D.prototype.draw = function() {
-	if (!this.canvasReady || !this.canvasContext) return;
-  this.canvasImage && this.canvasContext.drawImage(
-    this.canvasImage, 
-    0,
-    0,
-    this.canvasWidth, 
-    this.canvasHeight);  
+  if (!this.canvasReady || !this.canvasContext) return;
+  if (this.scroller) {
+    if (this.image) {
+      // with a scroll controller and an image, we should apply the image in a 3x3 grid, e.g.
+      // [1,1][1,2][1,3]
+      // [2,1][2,2][2,3]
+      // [3,1][3,2][3,3]
+      // starting at the centre (2,2)
+      this.context.drawImage(this.image, this.coordinates.x, this.coordinates.y, this.width, this.height);
+      // top-left (1,1)
+      this.context.drawImage(this.image, this.coordinates.x - this.width, this.coordinates.y - this.height, this.width, this.height);
+      // top (1,2)
+      this.context.drawImage(this.image, this.coordinates.x, this.coordinates.y - this.height, this.width, this.height);
+      // top-right (1,3)
+      this.context.drawImage(this.image, this.coordinates.x + this.width, this.coordinates.y - this.height, this.width, this.height);
+      // right (2,3)
+      this.context.drawImage(this.image, this.coordinates.x + this.width, this.coordinates.y, this.width, this.height);
+      // bottom-right (3,3)
+      this.context.drawImage(this.image, this.coordinates.x + this.width, this.coordinates.y + this.height, this.width, this.height);
+      // bottom (3,2)
+      this.context.drawImage(this.image, this.coordinates.x, this.coordinates.y + this.height, this.width, this.height);		
+      // botom-left (3,1)
+      this.context.drawImage(this.image, this.coordinates.x - this.width, this.coordinates.y + this.height, this.width, this.height);
+      // left (2,1)
+      this.context.drawImage(this.image, this.coordinates.x - this.width, this.coordinates.y, this.width, this.height);		
+    }
+    return;
+  }
+
+  // without a scroll controller, we're just going to draw an image if we have one
+  if (this.image) {
+    this.context.drawImage(
+      this.image, 
+      this.coordinates.x,
+      this.coordinates.y,
+      this.width, 
+      this.height
+    );  
+  }
 };
 
 Canvas2D.prototype.setFocus = function(gameObject) {
@@ -165,7 +198,15 @@ Canvas2D.prototype.setFocus = function(gameObject) {
 
 Canvas2D.prototype.scroll = function () {
   if (!this.scroller) return;
-  this.coordinates.add(this.scroller.velocity);
+  if (!this.scroller.velocity) return;
+	const newX = this.scroller && this.scroller.velocity.x != 0 ? this.coordinates.x + this.scroller.velocity.x * (this.scroller.scale || 1) : this.coordinates.x;
+	const newY = this.scroller && this.scroller.velocity.y != 0 ? this.coordinates.y + this.scroller.velocity.y * (this.scroller.scale || 1) : this.coordinates.y;
+  
+  // return if no change
+  if (newX == this.coordinates.x && newY == this.coordinates.y) return;
+
+  this.coordinates.x = newX >= this.width ? 0 : (newX < 0 ? this.width : newX);
+	this.coordinates.y = newY >= this.height ? 0 : (newY < 0 ? this.height : newY);
 };
 
 Canvas2D.prototype.contains = function(x, y, width, height, heading) {
