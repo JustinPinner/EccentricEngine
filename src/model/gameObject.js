@@ -41,7 +41,7 @@ class GameObject {
     if (!deferEvents) this.engine.eventSystem.dispatchEvent(`${this.id}-Loaded`);
 	}
 	get type() {
-		return this.conf.type;
+		return this.constructor.name;
 	}
 	get centre() {
 		if (!this.coordinates) {
@@ -86,7 +86,7 @@ GameObject.prototype.eventListener = function (thisObj, evt) {
   const thisId = this.id;
   const otherId = thisObj.id == thisId ? 'itself' : `obj id:${otherId}`;
   const eventDescription = `${evt.target} -> ${evt.action}`;
-	console.log(`GameObject eventListener on ${thisId} (type ${this.type}) caught an event of type ${eventDescription} intended for ${otherId}. Maybe consider implementing a handler in the descendant object's class.`);
+	console.log(`GameObject eventListener on ${thisId} (type ${this.type}) caught an event of type ${eventDescription} intended for ${otherId}. Implement a handler in the descendant object's class.`);
 }
 
 GameObject.prototype.rotate = function(degrees) {
