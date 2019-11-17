@@ -299,16 +299,20 @@ Engine.prototype.start = function() {
   this.onStart(this);
   this.timingStop('onStart');
   
-  requestAnimationFrame(this.tick.bind(this));
+  setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/(this.config.game.fps || 30));
   
   this.started = true;
   this.timingStop('start');
 }
 
-Engine.prototype.tick = function() {
+Engine.prototype.tick = function(frame) {
+  
+  requestAnimationFrame(this.tick.bind(this));
+  
   if (!this.isReady) {
     return;
   }
+  
   this.timingStart('tick');
   this.ticks += 1;
 
@@ -355,7 +359,6 @@ Engine.prototype.tick = function() {
 
   this.timingStop('tick');
 
-  setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/(this.config.game.fps || 30));  
 }
 
 export {
