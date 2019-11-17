@@ -256,8 +256,20 @@ Canvas2D.prototype.containsObject = function(obj) {
 
 Canvas2D.prototype.trackFocussedObject = function() {
   if (!this.focussedObject) return;
-  this.coordinates.x = this.focussedObject.coordinates.centre.x - this.width / 2;
-	this.coordinates.y = this.focussedObject.coordinates.centre.y - this.height / 2;	
+  // note: attempting to scroll _and_ track the focussed object 
+  // with a single canvas will almost certainly make weird things happen
+  // to avoid that use one canvas to scroll e.g. a background and another
+  // over the top of the scrolling one to draw everything on
+  if (this.scroller) {
+    // generally, scrolling happens in the opposite direction to the focussed
+    // object's velocity
+    this.scroller.velocity = this.focussedObject.velocity.clone().invert();
+  } else {
+    // if we're not scrolling this canvas, we lock its coordinates relative to
+    // the object we're tracking
+    this.coordinates.x = this.focussedObject.coordinates.centre.x - this.width / 2;
+    this.coordinates.y = this.focussedObject.coordinates.centre.y - this.height / 2;	  
+  }
 }
 
 Canvas2D.prototype.drawOrigin = function(forObject) {
