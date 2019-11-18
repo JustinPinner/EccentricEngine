@@ -280,7 +280,7 @@ Engine.prototype.start = function() {
   this.onStart(this);
   this.timingStop('onStart');
   
-  requestAnimationFrame(this.tick.bind(this));
+  setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/this.config.fps);  
   
   this.started = true;
   this.timingStop('start');
@@ -290,6 +290,9 @@ Engine.prototype.tick = function() {
   if (!this.isReady) {
     return;
   }
+
+  requestAnimationFrame(this.tick.bind(this));
+
   this.timingStart('tick');
   this.ticks += 1;
 
@@ -334,7 +337,6 @@ Engine.prototype.tick = function() {
 
   this.timingStop('tick');
 
-  setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/this.config.fps);  
 }
 
 export {
