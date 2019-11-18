@@ -14,6 +14,9 @@ But in the meantime, and in the absence of any useful docs, here's my work-in-pr
 There's also a fledgling [EccentricEngineDemos repo here](https://github.com/JustinPinner/EccentricEngineDemos) to which I'll add other demos as I make them.
 
 ## Versions
+1.0.5
+=====
+* Swap requestAnimationFrame around in Engine `start` & `tick`
 
 1.0.3
 =====
