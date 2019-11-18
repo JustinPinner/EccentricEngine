@@ -307,12 +307,12 @@ Engine.prototype.start = function() {
 
 Engine.prototype.tick = function(frame) {
   
-  requestAnimationFrame(this.tick.bind(this));
-  
   if (!this.isReady) {
     return;
   }
-  
+
+  requestAnimationFrame(this.tick.bind(this));
+
   this.timingStart('tick');
   this.ticks += 1;
 
