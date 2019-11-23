@@ -33,7 +33,6 @@ class Canvas2D {
 		this.canvasContext = null;
 		this.canvasImage = null;
 		this.canvasScrollController = this.config.scroll && this.config.scroll == true ? new Scrollable(null, 0, 0, this.config.scrollScale) : undefined;
-		this.canvasFocusObject = null;
 		this.canvasAlias = this.config.alias;
 		// size and style wrapper div
 		const wrapper = document.querySelector(this.config.wrapper.selector);
@@ -85,9 +84,6 @@ class Canvas2D {
 	get scroller() {
 		return this.canvasScrollController;
 	}
-	get focussedObject() {
-		return this.canvasFocusObject;
-	}
 
   /* setters */
   set image(img) {
@@ -128,8 +124,7 @@ Canvas2D.prototype.refresh = function() {
     return;
   }
   this.clear();
-  this.trackFocussedObject();
-  this.scroll();
+  if (this.scroller) this.scroll();
   this.draw();
 }
 
@@ -184,31 +179,6 @@ Canvas2D.prototype.draw = function() {
   }
 };
 
-Canvas2D.prototype.setFocus = function(gameObject) {
-  if (!gameObject) return;
-	// if (this.canvasFocusObject === gameObject) return;
-  this.canvasFocusObject = gameObject;
-  if (this.scroller) {
-    this.scroller.anchor = gameObject;
-    this.scroller.velocity = gameObject.velocity.invert();
-  }
-	this.canvasCoordinates.x = gameObject.coordinates.centre.x - (this.canvasWidth / 2);
-	this.canvasCoordinates.y = gameObject.coordinates.centre.y - (this.canvasHeight / 2);
-};
-
-Canvas2D.prototype.scroll = function () {
-  if (!this.scroller) return;
-  if (!this.scroller.velocity) return;
-	const newX = this.scroller && this.scroller.velocity.x != 0 ? this.coordinates.x + this.scroller.velocity.x * (this.scroller.scale || 1) : this.coordinates.x;
-	const newY = this.scroller && this.scroller.velocity.y != 0 ? this.coordinates.y + this.scroller.velocity.y * (this.scroller.scale || 1) : this.coordinates.y;
-  
-  // return if no change
-  if (newX == this.coordinates.x && newY == this.coordinates.y) return;
-
-  this.coordinates.x = newX >= this.width ? 0 : (newX < 0 ? this.width : newX);
-	this.coordinates.y = newY >= this.height ? 0 : (newY < 0 ? this.height : newY);
-};
-
 Canvas2D.prototype.contains = function(x, y, width, height, heading) {
 	const x1 = x;
 	const y1 = y;
@@ -254,23 +224,37 @@ Canvas2D.prototype.containsObject = function(obj) {
 	}
 };
 
-Canvas2D.prototype.trackFocussedObject = function() {
-  if (!this.focussedObject) return;
-  // note: attempting to scroll _and_ track the focussed object 
+Canvas2D.prototype.track = function(gameObject) {
+  // note: attempting to scroll _and_ track an object 
   // with a single canvas will almost certainly make weird things happen
   // to avoid that use one canvas to scroll e.g. a background and another
   // over the top of the scrolling one to draw everything on
-  if (this.scroller) {
+  if (this.scroller && gameObject.velocity) {
     // generally, scrolling happens in the opposite direction to the focussed
     // object's velocity
-    this.scroller.velocity = this.focussedObject.velocity.clone().invert();
+    this.scroller.velocity = gameObject.velocity.clone().invert();
   } else {
-    // if we're not scrolling this canvas, we lock its coordinates relative to
-    // the object we're tracking
-    this.coordinates.x = this.focussedObject.coordinates.centre.x - this.width / 2;
-    this.coordinates.y = this.focussedObject.coordinates.centre.y - this.height / 2;	  
+    if (gameObject.coordinates && gameObject.coordinates.centre) {
+      // if we're not scrolling this canvas, we lock its coordinates relative to
+      // the object we're tracking
+      this.coordinates.x = gameObject.coordinates.centre.x - this.width / 2;
+      this.coordinates.y = gameObject.coordinates.centre.y - this.height / 2;	  
+    }
   }
 }
+
+Canvas2D.prototype.scroll = function() {
+  if (!this.scroller) return;
+  if (!this.scroller.velocity) return;
+	const newX = this.scroller && this.scroller.velocity.x != 0 ? this.coordinates.x + this.scroller.velocity.x * (this.scroller.scale || 1) : this.coordinates.x;
+	const newY = this.scroller && this.scroller.velocity.y != 0 ? this.coordinates.y + this.scroller.velocity.y * (this.scroller.scale || 1) : this.coordinates.y;
+  
+  // return if no change
+  if (newX == this.coordinates.x && newY == this.coordinates.y) return;
+
+  this.coordinates.x = newX >= this.width ? 0 : (newX < 0 ? this.width : newX);
+	this.coordinates.y = newY >= this.height ? 0 : (newY < 0 ? this.height : newY);
+};
 
 Canvas2D.prototype.drawOrigin = function(forObject) {
 	if (!forObject || !this.coordinates) {

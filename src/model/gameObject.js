@@ -33,6 +33,7 @@ class GameObject {
     if (conf.update) {
 		  this.update = conf.update.bind(this, this);
     }
+    this.focussed = false;
 		this.fsm = conf.fsmStates ? new FSM(this, conf.fsmStates) : undefined;
 		this.engine.eventSystem.registerEvent(`${this.id}`);
 		this.engine.eventSystem.addEventListener(`${this.id}`, this.eventListener.bind(this, this));
@@ -73,12 +74,17 @@ class GameObject {
     if (this.fsm && this.fsm.collisionsEnabled) {
       status = true;
     }
-    // ??? this !== game.player.ship;
     return status;
+  }
+  get isFocussed() {
+    return this.focussed;
   }
 
   set canDraw(boolValue) {
     this.drawable = boolValue;
+  }
+  set isFocussed(boolValue) {
+    this.focussed = boolValue || false;
   }
 }
 

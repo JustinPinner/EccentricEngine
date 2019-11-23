@@ -73,6 +73,8 @@ class Engine {
     this.gamepadHandler = this.config.game.enableGamepadUI ? new GamepadHandler() : undefined;
     this.touchHandler = (this.config.game.enableTouchUI === true || this.config.game.enableTouchUI === 'auto' && this.hasTouchSupport) ? new TouchHandler(this.config.game.touchUI) : undefined;
     this.timing = {};
+    this.windowInterval = undefined;
+    this.windowTimeout = undefined;
     for (const cnv in this.config.game.canvasses) {
       const canvas = new Canvas2D(this.config.game.canvasses[cnv], this);
       if (canvas) {
@@ -102,33 +104,31 @@ class Engine {
   }
 
   /* getters */
-
   get isReady() {
     return this.canvasses.filter(function(canvas){return canvas.isReady;}).length == this.canvasses.length;
   }
-
   get objects() {
     return this.gameObjects;
   }
-
   get gamepad() {
     return this.gamepadHandler.gamepad;
   }
-
   get touchUI() {
     return this.touchHandler;
   }
-
   get keyboard() {
     return this.keyHandler;
   }
-
   get player() {
     return this.playerObj;
   }
+  get focussedObject() {
+    const objs = this.objects.filter(function(o) { return o.isFocussed; });
+    if (objs.length > 1) console.log(`WARN: ${objs.length} objects have focus`);
+    return objs.length > 0 ? objs[0] : undefined;
+  }
 
   /* setters */
-
   set player(player) {
     this.playerObj = player;
   }
@@ -239,8 +239,8 @@ Engine.prototype.flushLoggedEvents = function() {
 }
 
 Engine.prototype.focusOn = function(gameObject) {
-  for (const c in this.canvasses) {
-    this.canvasses[c].setFocus(gameObject);
+  for (const o in this.objects) {
+    this.objects[o].isFocussed = this.objects[o] === gameObject;
   }
 }
 
@@ -299,7 +299,7 @@ Engine.prototype.start = function() {
   this.onStart(this);
   this.timingStop('onStart');
   
-  setInterval(requestAnimationFrame(this.tick.bind(this)), 1000/(this.config.game.fps || 30));
+  requestAnimationFrame(this.tick.bind(this));
   
   this.started = true;
   this.timingStop('start');
@@ -308,13 +308,16 @@ Engine.prototype.start = function() {
 Engine.prototype.tick = function(frame) {
   
   if (!this.isReady) {
+    this.windowTimeout = setTimeout(requestAnimationFrame(this.tick.bind(this)), 1000/(this.config.game.fps || 30));
     return;
   }
 
-  requestAnimationFrame(this.tick.bind(this));
-
   this.timingStart('tick');
   this.ticks += 1;
+
+  if (this.windowTimeout) {
+    cancelTimeout(this.windowTimeout);
+  }
 
   this.refreshUi();
 
@@ -356,6 +359,8 @@ Engine.prototype.tick = function(frame) {
   this.timingStart('onTick');
   this.onTick(this);
   this.timingStop('onTick');
+
+  requestAnimationFrame(this.tick.bind(this));
 
   this.timingStop('tick');
 
