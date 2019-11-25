@@ -11,6 +11,8 @@ export * from './lib/math';
 export * from './lib/partition';
 export * from './model/gameObject';
 export * from './model/sprite';
+export * from './model/particleEmitter';
+export * from './model/particle';
 export * from './ui/gamepad';
 export * from './ui/keys';
 export * from './ui/touch';
