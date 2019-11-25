@@ -7,7 +7,7 @@ import { Sprite } from '../model/sprite';
 class GameObject {
 	constructor(conf, position, engine, deferEvents) {
     this.engine = engine;
-		this.ready = false;
+		this.isReady = false;
     this.disposable = false;
     this.drawable = false;    
     this.id = uuidv4();
@@ -41,7 +41,10 @@ class GameObject {
 		// v-- this must be last --v
     if (!deferEvents) this.engine.eventSystem.dispatchEvent(`${this.id}-Loaded`);
 	}
-	get type() {
+  get ready() {
+    return this.isReady && !this.disposable;
+  }
+  get type() {
 		return this.constructor.name;
 	}
 	get centre() {
@@ -85,6 +88,9 @@ class GameObject {
   }
   set isFocussed(boolValue) {
     this.focussed = boolValue || false;
+  }
+  set ready(boolValue) {
+    this.isReady = boolValue;
   }
 }
 
@@ -337,7 +343,7 @@ GameObject.prototype.collisionDetect = function(x, y) {
 GameObject.prototype.takeHit = function(source) {};
 
 GameObject.prototype.isOnScreen = function() {
-	return this.engine.canvas('viewport').contains(this.coordinates.x, this.coordinates.y, this.width, this.height, this.rotation);
+  return this.engine.canvas('viewport').containsObject(this);
 };
 
 GameObject.prototype.draw = function() {

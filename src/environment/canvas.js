@@ -179,48 +179,36 @@ Canvas2D.prototype.draw = function() {
   }
 };
 
-Canvas2D.prototype.contains = function(x, y, width, height, heading) {
-	const x1 = x;
-	const y1 = y;
-	const x2 = x + width;
-	const y2 = y + height;
-	const cx = x1 + width / 2;
-	const cy = y1 + height / 2;
+Canvas2D.prototype.contains = function(geometry) {
+	const x1 = geometry.ox;
+	const y1 = geometry.oy;
+	const x2 = geometry.ox + Math2D.dir_x(geometry.width, geometry.rotation);
+	const y2 = geometry.oy + Math2D.dir_y(geometry.height, geometry.rotation);
 
-	const p1 = heading ? 
-		Math2D.rotatePoint(cx, cy, x1, y1, heading) :
-		new Point2D(x1, y1);
-	
-	const p2 = heading ?
-    Math2D.rotatePoint(cx, cy, x2, y2, heading) :
-		new Point2D(x2, y2);
+  const p1 = new Point2D(x1, y1);
+  const p2 = new Point2D(x2, y2);
 
 	const isContained =
-		this.canvasFocusObject ?
-			p1.x >= this.canvasFocusObject.coordinates.x - this.canvasWidth / 2 && 
-			p1.y >= this.canvasFocusObject.coordinates.y - this.canvasHeight / 2 && 
-			p2.x <= this.canvasFocusObject.coordinates.x + this.canvasWidth / 2 &&
-			p2.y <= this.canvasFocusObject.coordinates.y + this.canvasHeight / 2
-		:
-			p1.x >= this.canvasDrawable.from.x &&
-			p1.y >= this.canvasDrawable.from.y &&
-			p2.x <= this.canvasDrawable.to.x &&
-			p2.y <= this.canvasDrawable.to.y;
+    p1.x >= this.coordinates.x &&
+    p1.y >= this.coordinates.y &&
+    p2.x <= this.coordinates.x + this.width &&
+    p2.y <= this.coordinates.y + this.height;
 
 	return isContained;
 };
 
 Canvas2D.prototype.containsObject = function(obj) {
-	if (this.canvasFocusObject === obj) {
+	if (obj.isFocussed) {
 		return true;
 	} else {
-		return this.contains(
-			obj.coordinates.x, 
-			obj.coordinates.y, 
-			obj.width, 
-			obj.height, 
-			obj.rotation
-		);
+    const geometry = {
+      ox: (obj.coordinates && obj.coordinates.origin) ? obj.coordinates.origin.x : obj.coordinates.x, 
+      oy: (obj.coordinates && obj.coordinates.origin) ? obj.coordinates.origin.y : obj.coordinates.y, 
+      width: obj.width, 
+      height: obj.height, 
+      rotation: obj.rotation
+    };
+		return this.contains(geometry);
 	}
 };
 

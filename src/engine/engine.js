@@ -322,7 +322,7 @@ Engine.prototype.tick = function(frame) {
   this.refreshUi();
 
   const deadAndAlive = partition(this.gameObjects, function(obj) {
-    return obj.TTL ? obj.TTL <= 0 : obj.disposable;
+    return (obj.TTL && obj.TTL <= 0) || obj.disposable;
   });
 
   // clean out event listeners for dead objects
