@@ -1,29 +1,30 @@
 
 class FSM {
-	constructor(host, states) {
+	constructor(host, role) {
     this.host = host;
-    this.states = states.__proto__.hasOwnProperty('apply') ? states() : states;
-    this.currentState = this.states.default;
+    this.role = role;
+    // this.states = states.__proto__.hasOwnProperty('apply') ? states() : states;
+    this.currentAction = this.role.defaultAction || this.role.actions[0];
     this.lastTransitionTime = undefined;
     this.lastExecutionTime = undefined;
   }
 }
 
 FSM.prototype.eventListener = function(evt) { 
-  switch (evt.action) {
+  switch (evt.command) {
     case 'SET':
-      this.setState(evt.state);
+      this.setAction(evt.action);
       break;
     case 'EXECUTE':
-      if (evt.state && evt.state.execute) {
-        evt.state.execute();
+      if (evt.action && evt.action.execute) {
+        evt.action.execute();
       } else {
         this.execute();
       }
       break;
     case 'TRANSITION':
-      if (evt.state) {
-        this.transition(evt.state);
+      if (evt.action) {
+        this.transition(evt.action);
       }
       break;
   }
@@ -35,48 +36,48 @@ FSM.prototype.execute = function() {
     // Wut?!
     return;
   }
-  if (!this.currentState) {
-    this.currentState = (this.states.default ? this.states.default : undefined);
+  if (!this.currentAction) {
+    this.currentAction = (this.role.defaultAction ? this.role.defaultAction : undefined);
   } 
-  if (this.host && this.currentState && this.currentState.execute) {
-    if ((this.lastExecutionTime || 0) + (this.currentState.minimumExecutionInterval || 0) <= now) {
+  if (this.host && this.currentAction && this.currentAction.execute) {
+    if ((this.lastExecutionTime || 0) + (this.currentAction.minimumExecutionInterval || 0) <= now) {
       this.lastExecutionTime = now;
-      this.currentState.execute(this.host);
+      this.currentAction.execute(this.host);
     }
 	}
 }
 
-FSM.prototype.pushState = function () {
-  this.savedState = this.currentState;
-}
+// FSM.prototype.pushAction = function () {
+//   this.savedAction = this.currentAction;
+// }
 
-FSM.prototype.popState = function() {
-  this.currentState = this.savedState;
-  this.savedState = undefined;
-}
+// FSM.prototype.popAction = function() {
+//   this.currentAction = this.savedAction;
+//   this.savedAction = undefined;
+// }
 
-FSM.prototype.setState = function(newState) {
+FSM.prototype.setAction = function(newAction) {
   if (!this.host) {
     return;
   }
   const now = Date.now();
-  this.currentState = newState;
+  this.currentAction = newAction;
   this.lastTransitionTime = now;
   this.startTime = now;
   this.lastExecutionTime = undefined;
 }
 
-FSM.prototype.transition = function(newState, force) {
-  if (this.currentState && this.currentState.nextStates.includes(newState.name) || newState.force || force) {
-    this.setState(newState);
-    if (newState.executeOnTransition) {
+FSM.prototype.transition = function(newAction, force) {
+  if (this.currentAction && this.role.actions.includes(newAction.name) || newAction.force || force) {
+    this.setAction(newAction);
+    if (newAction.executeOnTransition) {
       this.execute();
     }
   }
 }
 
 FSM.prototype.collisionsEnabled = function() {
-  return this.state.detectCollisions;
+  return this.action.detectCollisions;
 }
 
 export { FSM };

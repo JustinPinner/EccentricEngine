@@ -13,7 +13,7 @@ class Logger {
 Logger.prototype.logAction = function(logMessage) {
   const now = new Date();
   const withMillis = true;
-  console.log(`${this.formatter.formatTime(now, withMillis)} > ${this._parent}: ${logMessage}`);
+  console.log(`${this.formatter.formatTime(now, withMillis)} > ${this._parent.type || 'Object'}: ${logMessage}`);
 }
 
 export {

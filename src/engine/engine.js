@@ -3,56 +3,19 @@ import { Reactor } from '../lib/events';
 import { Audio } from '../lib/audio';
 import { Canvas2D } from '../environment/canvas';
 import { TouchInterface, TouchHandler } from '../ui/touch';
-import { KeyHandler, KeyProcessor } from '../ui/keys';
+import { KeyHandler } from '../ui/keys';
 import { GamepadHandler } from '../ui/gamepad';
 import { partition } from '../lib/partition';
 import { ImageService } from '../utils/image';
 import { TimerSystem } from '../lib/timer';
 import { Formatter } from '../lib/format';
-
-class GameConfiguration {
-  constructor(userConfiguration, userLifecycle) {
-    this._game = {
-      version: 0.0,
-      fps: 30,
-      defaultImagePath: './assets',
-      canvasses: {},
-      touchUI: {},
-      enableTouchUI: 'auto',
-      enableKeyboardUI: false,
-      enableGamepadUI: false,
-      keyProcessor: KeyProcessor,
-      lifeCycle: {
-        onSetup: () => { return true; },  // --|\   any or all of these can be
-        onStart: () => { return true; },  //   |  > implemented via the userLifecycle
-        onTick: () => { return true; }    // --|/   parameter if desired
-      },
-      eventListener: (thisObj, evt) => {
-        if (evt.callback) {
-          evt.callback(thisObj, evt);
-        }
-      }
-    };
-    this._configuration = () => {
-      return {
-        game: this._game
-      };
-    }
-    if (userConfiguration) {
-      this._configuration = new userConfiguration(userLifecycle); 
-    }
-  };
-  get config() {
-    return this._configuration;
-  }
-}
+import { Logger } from '../lib/logger';
 
 class Engine {
-  constructor(userConfig, userLifecycle) {
+  constructor(configuration) {
     this.id = 'ENGINE';
     this.formatter = new Formatter();
-    this.configuration = new GameConfiguration(userConfig, userLifecycle);
-    this.config = this.configuration.config;
+    this.config = configuration;  // should be an instantiated Config or a descendent thereof
     this.debug = this.config.debugEngine || false;
     this.eventSystem = new Reactor(this.debug);
     this.audioSystem = new Audio();
@@ -65,6 +28,7 @@ class Engine {
     this.onTick = this.config.game.lifeCycle.onTick;
     this.playerObj = null;
     this.loggedEvents = [];
+    this.logger = new Logger(this);
     this.ticks = 0;   
     this.hasTouchSupport = (window.navigator && window.navigator.maxTouchPoints > 0);
     this.gameObjects = [];
@@ -124,7 +88,7 @@ class Engine {
   }
   get focussedObject() {
     const objs = this.objects.filter(function(o) { return o.isFocussed; });
-    if (objs.length > 1) console.log(`WARN: ${objs.length} objects have focus`);
+    if (objs.length > 1) this.log(`WARN: ${objs.length} objects have focus`);
     return objs.length > 0 ? objs[0] : undefined;
   }
 
@@ -227,13 +191,13 @@ Engine.prototype.filterObjects = function(objectTypeOrTypes) {
   return this.objects;
 }
 
-Engine.prototype.log = function(loggedEvent) {
-  this.loggedEvents.push(loggedEvent.dump);
+Engine.prototype.log = function(message) {
+  this.logger.logAction(message);
 }
 
 Engine.prototype.flushLoggedEvents = function() {
   for (let ev=0; ev < this.loggedEvents.length; ev += 1) {
-    console.log(this.loggedEvents[ev]);
+    this.log(this.loggedEvents[ev]);
   }
   this.loggedEvents = [];
 }

@@ -3,6 +3,7 @@ import { Vector2D, Point2D, Math2D } from '../lib/lib2d';
 import { FSM } from '../lib/fsm';
 import { AudioEffect } from '../lib/audio';
 import { Sprite } from '../model/sprite';
+import { Logger } from '../lib/logger';
 
 class GameObject {
 	constructor(conf, position, engine, deferEvents) {
@@ -37,7 +38,8 @@ class GameObject {
 		this.fsm = conf.fsmStates ? new FSM(this, conf.fsmStates) : undefined;
 		this.engine.eventSystem.registerEvent(`${this.id}`);
 		this.engine.eventSystem.addEventListener(`${this.id}`, this.eventListener.bind(this, this));
-		this.engine.registerObject(this);		
+    this.engine.registerObject(this);
+    this.logger = new Logger(this);		
 		// v-- this must be last --v
     if (!deferEvents) this.engine.eventSystem.dispatchEvent(`${this.id}-Loaded`);
 	}
@@ -94,11 +96,15 @@ class GameObject {
   }
 }
 
+GameObject.prototype.log = function(message) {
+  this.logger.logAction(message);
+}
+
 GameObject.prototype.eventListener = function (thisObj, evt) {
   const thisId = this.id;
   const otherId = thisObj.id == thisId ? 'itself' : `obj id:${otherId}`;
   const eventDescription = `${evt.target} -> ${evt.action}`;
-	console.log(`GameObject eventListener on ${thisId} (type ${this.type}) caught an event of type ${eventDescription} intended for ${otherId}. Implement a handler in the descendant object's class.`);
+	this.log(`GameObject eventListener on ${thisId} (type ${this.type}) caught an event of type ${eventDescription} intended for ${otherId}. Implement a handler in the descendant object's class.`);
 }
 
 GameObject.prototype.rotate = function(degrees) {
@@ -134,7 +140,7 @@ GameObject.prototype.loadCollisionCentres = function() {
 
 GameObject.prototype.loadStatus = function() {
 	if (!this._role || !this._role.initialStatus) {
-		game.log(new LoggedEvent('gameobject.prototype.loadStatus', 'called with no _role or _role.initialStatus'));
+		this.log('gameobject.prototype.loadStatus called with no _role or _role.initialStatus');
 		return;
 	}
 	this._status = this._role.initialStatus;

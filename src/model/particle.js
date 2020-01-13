@@ -17,7 +17,7 @@ class Particle extends GameObject {
     this._fadeOut = conf.fadeOut ? conf.fadeOut : false;
     this._velocity = new Vector2D(Math2D.dir_x(conf.speed, conf.heading), Math2D.dir_y(conf.speed, conf.heading));
   }
-
+  // getters
   get config() {
     return this._conf;
   }
@@ -39,7 +39,8 @@ class Particle extends GameObject {
   get width() {
     return this._radius;
   }   
-
+  
+  // setters
   set TTL(timeToLive) {
     this._ttl = timeToLive;
   }

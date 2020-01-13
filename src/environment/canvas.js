@@ -1,6 +1,7 @@
 
 import { Point2D, Scrollable, Math2D } from '../lib/lib2d';
 import { Coordinate3D } from '../lib/lib3d';
+import { Logger } from '../lib/logger';
 
 const defaultConfig = {
 	x: 0,
@@ -33,7 +34,8 @@ class Canvas2D {
 		this.canvasContext = null;
 		this.canvasImage = null;
 		this.canvasScrollController = this.config.scroll && this.config.scroll == true ? new Scrollable(null, 0, 0, this.config.scrollScale) : undefined;
-		this.canvasAlias = this.config.alias;
+    this.canvasAlias = this.config.alias;
+    this.logger = new Logger(this);
 		// size and style wrapper div
 		const wrapper = document.querySelector(this.config.wrapper.selector);
 		if (wrapper) {
@@ -115,6 +117,9 @@ Canvas2D.prototype.init = function(fillImage, callBack) {
 		this.canvasImage = this.loadImage((fillImage || this.config.canvas.image), callBack);		
 	}
   this.canvasReady = !!this.canvasContext;
+  if (!this.canvasReady) {
+    this.logger.logAction(`Cannot initialise canvas using selector ${this.config.canvas.selector} - is it in your html document?`);
+  }
   this.draw();
 };
 

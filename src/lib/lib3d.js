@@ -29,6 +29,11 @@ Point3D.prototype.clone = function() {
   return new Point3D(this._x, this._y, this._z);
 }
 
+Point3D.prototype.add = function(vector2D) {
+  this.x += vector2D.x;
+  this.y += vector2D.y;
+}
+
 class Coordinate3D {
   constructor(x, y, z) {
     this._x = x;

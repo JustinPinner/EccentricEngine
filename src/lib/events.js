@@ -11,9 +11,13 @@ class Event {
   }
 }
 
+Event.prototype.log = function(message) {
+  this.logger && this.logger.logAction(message);
+}
+
 Event.prototype.registerCallback = function(callback){
   this.callbacks.push(callback);
-  this.logger && this.logger.logAction(`callback pushed: ${this.callbacks.length} registered.`);
+  this.logger && this.log(`callback pushed: ${this.callbacks.length} registered.`);
 }
 
 class Reactor{
@@ -24,10 +28,14 @@ class Reactor{
   }
 }
 
+Reactor.prototype.log = function(message) {
+  this.logger && this.logger.logAction(message);
+}
+
 Reactor.prototype.registerEvent = function(eventName){
   const event = new Event(eventName);
   this.events[eventName] = event;
-  this.logger && this.logger.logAction(`event registered: ${eventName}`);
+  this.log(`event registered: ${eventName}`);
 };
 
 Reactor.prototype.dispatchEvent = function(eventName, eventArgs){
@@ -36,9 +44,9 @@ Reactor.prototype.dispatchEvent = function(eventName, eventArgs){
   this.events[eventName].callbacks.forEach(function(callback){
     evCount += 1;
     callback(eventArgs);
-    self.logger && self.logger.logAction(`callback triggered for ${eventName} with args: ${eventArgs ? eventArgs : 'none'}`);
+    self.log(`callback triggered for ${eventName} with args: ${eventArgs ? eventArgs : 'none'}`);
   });
-  self.logger && self.logger.logAction(`event dispatched: ${eventName} - ${evCount} callback(s) triggered`);
+  self.log(`event dispatched: ${eventName} - ${evCount} callback(s) triggered`);
 };
 
 Reactor.prototype.deRegisterEvent = function(eventName) {
