@@ -1,6 +1,10 @@
 export function randInt(max) {
-  return Math.floor(rand(max));
+  return Math.round(rand(max));
 };
+
+export function randSignedInt(max) {
+  return(Math.round(rand(max, true)));  
+}
 
 export function randRangeInt(min, max) {
   const r = Math.round(rand(max));

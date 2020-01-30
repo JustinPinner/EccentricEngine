@@ -35,7 +35,7 @@ class GameObject {
 		  this.update = conf.update.bind(this, this);
     }
     this.focussed = false;
-		this.fsm = conf.fsmStates ? new FSM(this, conf.fsmStates) : undefined;
+		this.fsm = conf.role ? new FSM(this, conf.role) : undefined;
 		this.engine.eventSystem.registerEvent(`${this.id}`);
 		this.engine.eventSystem.addEventListener(`${this.id}`, this.eventListener.bind(this, this));
     this.engine.registerObject(this);

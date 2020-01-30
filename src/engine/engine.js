@@ -147,6 +147,10 @@ Engine.prototype.registerObject = function(gameObject) {
   return true;
 }
 
+Engine.prototype.spawnObject = function(objectClass, params) {
+  return new objectClass(...params);
+}
+
 Engine.prototype.deleteObjectById = function(id) {
   const obj = this.getObjectById(id);
   if (obj) {
