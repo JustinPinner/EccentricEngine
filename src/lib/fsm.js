@@ -68,7 +68,7 @@ FSM.prototype.setAction = function(newAction) {
 }
 
 FSM.prototype.transition = function(newAction, force) {
-  if (this.currentAction && this.role.actions.includes(newAction.name) || newAction.force || force) {
+  if (this.currentAction && this.role.actions.includes(newAction) || newAction.force || force) {
     this.setAction(newAction);
     if (newAction.executeOnTransition) {
       this.execute();

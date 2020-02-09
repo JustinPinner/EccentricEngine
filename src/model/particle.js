@@ -8,7 +8,7 @@ class Particle extends GameObject {
     this._lastTtlTick = 0;
     this._lastTick = 0;
     this._rgba = conf.rgba || {red: 255, green: 255, blue: 255, alpha: 1.0};
-    this._radius = conf.radius;
+    this._radius = conf.radius || conf.width || conf.height;
     this._speed = conf.emitSpeed;
     this._heading = conf.emitAngle;
     this._lifeSpan = conf.ttl;
@@ -36,9 +36,6 @@ class Particle extends GameObject {
   get drawOriginCentre() {
     return this.engine.canvas('viewport').drawCentre(this);
   }
-  get width() {
-    return this._radius;
-  }   
   
   // setters
   set TTL(timeToLive) {
@@ -47,9 +44,6 @@ class Particle extends GameObject {
   set lastTTLTick(millis) {
     this._lastTtlTick = millis;
   }
-  set width(w) {
-    this._radius = w;
-  }    
 }
 
 Particle.prototype.init = function() {

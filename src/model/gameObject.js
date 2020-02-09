@@ -12,6 +12,7 @@ class GameObject {
     this.disposable = false;
     this.drawable = false;    
     this.id = uuidv4();
+    this._collisionsSuspended = false;
     this.maxStartupMillis = 500;  // <- tune if this.initDone is being triggered too soon or too late
 		this.engine.eventSystem.registerEvent(`${this.id}-Loaded`);
 		this.engine.eventSystem.addEventListener(`${this.id}-Loaded`, this.init.bind(this));
@@ -22,8 +23,6 @@ class GameObject {
 			(this.conf.initialVelocity && this.conf.initialVelocity.x) ? this.conf.initialVelocity.x : 0, 
 			(this.conf.initialVelocity && this.conf.initialVelocity.y) ? this.conf.initialVelocity.y : 0
 		);
-		this.width = this.conf.width;
-		this.height = this.conf.height;
 		this.vertices = [];
     this.sprites = [];	    // --|\ will be loaded during the init call triggered 
     this.soundEffects = []; // --|/ by the xxx-Loaded event
@@ -72,17 +71,26 @@ class GameObject {
     return this.conf;
   }
   get canCollide() {
-    let status = false;
-    if (this.conf.detectCollisions) {
-      status = this.conf.detectCollisions == true;
-    }
-    if (this.fsm && this.fsm.collisionsEnabled) {
-      status = true;
-    }
-    return status;
+    return !this._collisionsSuspended &&
+     (this.conf && this.conf.detectCollisions) || 
+     (this.fsm && this.fsm.currentAction && this.fsm.currentAction.detectCollisions);
   }
   get isFocussed() {
     return this.focussed;
+  }
+  get width() {
+    const w = this.conf.width || 1;
+    if (this.scale && !isNaN(this.scale.x)) {
+      return w * this.scale.x;
+    }
+    return w;
+  }
+  get height() {
+    const h = this.conf.height || 1;
+    if (this.scale && !isNaN(this.scale.y)) {
+      return h * this.scale.y;
+    }
+    return h;
   }
 
   set canDraw(boolValue) {
@@ -93,6 +101,9 @@ class GameObject {
   }
   set ready(boolValue) {
     this.isReady = boolValue;
+  }
+  set collisionsSuspended(boolVal) {
+    this._collisionsSuspended = boolVal;
   }
 }
 
@@ -173,7 +184,7 @@ GameObject.prototype.init = function() {
 		this.engine.eventSystem.registerEvent(`${this.id}FSM`);
 		this.engine.eventSystem.addEventListener(`${this.id}FSM`, this.fsm.eventListener.bind(this.fsm, this));
 	}
-  this.engine.timers.add(`${this.id}-InitDone`, null, this.maxStartupMillis, this.initDone.bind(this), this);
+  this.engine.timers.add(`${this.id}-InitDone`, null, this.maxStartupMillis, this.initDone.bind(this), [this]);
   this.engine.timers.start(`${this.id}-InitDone`);
   this.ready = true;
   this.canDraw = true;
@@ -226,43 +237,71 @@ GameObject.prototype.collide = function(otherGameObject) {
 	if (this.collisionCentres.length == 0 || otherGameObject.collisionCentres.length == 0) {
 		return;
 	}
-	// iterate over each object's collision radii
-	for (myCentre in this.collisionCentres) {
-		myCollisionCentre = this.collisionCentres[myCentre].scaled ? 
+  // iterate over each object's collision radii
+  let stopDetecting = false;
+	for (const myCentre in this.collisionCentres) {
+    if (stopDetecting) {
+      break;
+    }
+		const myCollisionCentre = this.collisionCentres[myCentre].scaled ? 
 			this.collisionCentres[myCentre].scaled : 
 			this.collisionCentres[myCentre];
-		for (theirCentre in otherGameObject.collisionCentres) {			
-			const theirCollisionCentre = otherGameObject.collisionCentres[theirCentre].scaled ?
-				otherGameObject.collisionCentres[theirCentre].scaled : 
-				otherGameObject.collisionCentres[theirCentre];
+		for (const theirCentre in otherGameObject.collisionCentres) {			
+      if (stopDetecting) {
+        break;
+      }
+      const theirCollisionCentre = otherGameObject.collisionCentres[theirCentre].scaled ?
+      otherGameObject.collisionCentres[theirCentre].scaled : 
+      otherGameObject.collisionCentres[theirCentre];
 			const dx = myCollisionCentre.x - theirCollisionCentre.x;
 			const dy = myCollisionCentre.y - theirCollisionCentre.y;
 			const distance = Math.sqrt((dx * dx) + (dy * dy));		
 			if (distance <= myCollisionCentre.radius + theirCollisionCentre.radius) {
-				if (otherGameObject instanceof Pickup && this instanceof Ship) {
-					if (otherGameObject.source !== this) {
-						if (otherGameObject.payload instanceof Weapon) {
-							this.collectWeapon(otherGameObject);
-						} else {
-							this.collectPowerUp(otherGameObject);
-						}
-						otherGameObject.disposable = true;
-						return;
-					}	
-				} else if (this instanceof Pickup && otherGameObject instanceof Ship) {
-					if (this.source !== otherGameObject) {
-						if (this.payload instanceof Weapon) {
-							otherGameObject.collectWeapon(this);							
-						} else {
-							otherGameObject.collectPowerUp(this);
-						}
-						this.disposable = true;
-						return;
-					}
-				} else if (this instanceof Pickup || otherGameObject instanceof Pickup) {
-					// pickups do not take/cause damage
-					return;
-				}
+        // TODO: implement as collision groups
+        stopDetecting = true;
+        
+        // TODO: move this into a custom collider on the decendant object
+        // if (otherGameObject instanceof Pickup && this instanceof Ship) {
+				// 	if (otherGameObject.source !== this) {
+				// 		if (otherGameObject.payload instanceof Weapon) {
+				// 			this.collectWeapon(otherGameObject);
+				// 		} else {
+				// 			this.collectPowerUp(otherGameObject);
+				// 		}
+				// 		otherGameObject.disposable = true;
+				// 		return;
+				// 	}	
+				// } else if (this instanceof Pickup && otherGameObject instanceof Ship) {
+				// 	if (this.source !== otherGameObject) {
+				// 		if (this.payload instanceof Weapon) {
+				// 			otherGameObject.collectWeapon(this);							
+				// 		} else {
+				// 			otherGameObject.collectPowerUp(this);
+				// 		}
+				// 		this.disposable = true;
+				// 		return;
+				// 	}
+				// } else if (this instanceof Pickup || otherGameObject instanceof Pickup) {
+				// 	// pickups do not take/cause damage
+				// 	return;
+        // }
+        //
+        // Suspend further collision detection for a short time
+        // this.collisionsSuspended = true;
+        // otherGameObject.collisionsSuspended = true;
+        // this.engine.timers.add(
+        //   `ResumeCollisions${this.id}${otherGameObject.id}`, 
+        //   1000, 
+        //   undefined, 
+        //   (a, b, e) => {
+        //     a.collisionsSuspended = false; 
+        //     b.collisionsSuspended = false;
+        //     e.timers.cancel(`ResumeCollisions${a.id}${b.id}`)
+        //   }, 
+        //   [this, otherGameObject, this.engine]
+        // );
+        // this.engine.timers.start(`ResumeCollisions${this.id}${otherGameObject.id}`);
+        
 				if (this.mass && otherGameObject.mass) {
 					// Apply basic motion transference algorithm
 					// from https://gamedevelopment.tutsplus.com/tutorials/when-worlds-collide-simulating-circle-circle-collisions--gamedev-769)
@@ -293,7 +332,7 @@ GameObject.prototype.collide = function(otherGameObject) {
 					this.velocity.y = newVelY1;
 					otherGameObject.velocity.x = newVelX2;
 					otherGameObject.velocity.y = newVelY2;
-				}
+        }
 				// Apply damage
 				otherGameObject.takeHit(this);
 				this.takeHit(otherGameObject);						
@@ -311,9 +350,9 @@ GameObject.prototype.collisionDetect = function(x, y) {
 	const candidates = this.engine.objects.filter(function(obj) {
     return obj !== self && 
       obj.canCollide && 
-      (self.coordinates && self.coordinates.centre.z) &&
-      (obj.coordinates && obj.coordinates.centre.z) &&
-      self.coordinates.centre.z == obj.coordinates.centre.z;
+      (!isNaN(self.coordinates.centre.z)) &&
+      (!isNaN(obj.coordinates.centre.z)) &&
+      ((self.coordinates.centre && self.coordinates.centre.z) || 0) == ((obj.coordinates.centre && obj.coordinates.centre.z) || 0);
   });
   // collect what's left and within local proximity
   const localCandidates = candidates.filter(function(obj){
@@ -351,6 +390,12 @@ GameObject.prototype.takeHit = function(source) {};
 GameObject.prototype.isOnScreen = function() {
   return this.engine.canvas('viewport').containsObject(this);
 };
+
+GameObject.prototype.update = function() {
+	if (this.fsm) {
+		this.fsm.execute();
+	}
+}
 
 GameObject.prototype.draw = function() {
 	if (!this.ready) return;

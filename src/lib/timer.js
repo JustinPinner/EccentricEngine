@@ -7,7 +7,7 @@ class Timer {
     this._interval = intervalMs;
     this._timeout = timeoutMs;
     this._triggerFn = triggerFn;
-    this._triggerArg = fnArg;
+    this._triggerArg = fnArg || [];
     this._host = host ? host : window;
     this._id = undefined;
     this._lastRun = undefined;
@@ -29,7 +29,7 @@ class Timer {
 Timer.prototype.tick = function() {
   if (!(this._isPaused || this._isCancelled) && this._triggerFn) {
     this._lastRun = Date.now();
-    this._triggerFn(this._triggerArg);
+    this._triggerFn(...this._triggerArg);
     // Logging is a slow operation - only uncomment in times of desperation!
     // this._logger && this._logger.logAction(`tick: ${this._name} (id: ${this._id})`);
   }
@@ -64,13 +64,23 @@ Timer.prototype.cancel = function() {
   this._logger && this._logger.logAction(`cancelled: ${this._name} (id: ${this._id})`);
 }
 
+class TimerSystemCleanerTask extends Timer {
+  constructor(host, debug) {
+    super(host, 'TimerSystemCleanerTask', undefined, 1000, undefined, undefined, debug);
+    this._triggerFn = () => {
+      this._host.timers.cleanUp();
+    }
+  }
+}
 
 class TimerSystem {
   constructor(host, debug) {
     this._debug = debug || false;
     this._host = host;
-    this._timers = [];
     this._logger = (debug ? new Logger('TimerSystem') : undefined);
+    const cleanerTask = new TimerSystemCleanerTask(host, debug);
+    this._timers = [cleanerTask];
+    this.start(cleanerTask.name);
   }
 }
 
@@ -146,9 +156,11 @@ TimerSystem.prototype.cancel = function(timerName) {
 }
 
 TimerSystem.prototype.cancelAll = function() {
-  this._logger && this._logger.logAction(`cancelling all timers`);
+  this._logger && this._logger.logAction(`cancelling all timers (except cleaner task)`);
   for (const t in this._timers) {
-    this._timers[t].cancel();
+    if (!this._timers[t] instanceof TimerSystemCleanerTask) {
+      this._timers[t].cancel();
+    }
   }
   this.cleanUp();
 }
