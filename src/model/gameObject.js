@@ -392,7 +392,10 @@ GameObject.prototype.isOnScreen = function() {
 };
 
 GameObject.prototype.update = function() {
-	if (this.fsm) {
+  if (!this.ready) return;
+  this.updatePosition();
+  this.collisionDetect();
+  if (this.fsm) {
 		this.fsm.execute();
 	}
 }
@@ -459,13 +462,8 @@ GameObject.prototype.draw = function() {
 };
 
 GameObject.prototype.updateAndDraw = function() {
-	if (this.disposable) return;
-	this.updatePosition();
-	this.collisionDetect();
-	this.draw();
-	if (this._fsm && this._fsm.execute) {
-		this._fsm.execute();
-	}
+  this.update();
+  this.draw();
 };
 
 export {

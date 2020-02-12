@@ -317,10 +317,7 @@ Engine.prototype.tick = function(frame) {
         }
       }
     }
-    if (gameObject.ready) {
-      gameObject.update();
-      gameObject.draw();  
-    }
+    gameObject.updateAndDraw();
   }
 
   // run custom user code
