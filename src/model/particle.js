@@ -9,13 +9,13 @@ class Particle extends GameObject {
     this._lastTick = 0;
     this._rgba = conf.rgba || {red: 255, green: 255, blue: 255, alpha: 1.0};
     this._radius = conf.radius || conf.width || conf.height;
-    this._speed = conf.emitSpeed;
-    this._heading = conf.emitAngle;
+    this._speed = conf.speed;
+    this._heading = conf.angle;
     this._lifeSpan = conf.ttl;
     this._ttl = conf.ttl;
     this._fadeIn = conf.fadeIn ? conf.fadeIn : false;
     this._fadeOut = conf.fadeOut ? conf.fadeOut : false;
-    this._velocity = new Vector2D(Math2D.dir_x(conf.speed, conf.heading), Math2D.dir_y(conf.speed, conf.heading));
+    this._velocity = new Vector2D(Math2D.dir_x(conf.speed, conf.angle), Math2D.dir_y(conf.speed, conf.angle));
   }
   // getters
   get config() {
@@ -36,6 +36,9 @@ class Particle extends GameObject {
   get drawOriginCentre() {
     return this.engine.canvas('viewport').drawCentre(this);
   }
+  get velocity() {
+    return this._velocity;
+  }
   
   // setters
   set TTL(timeToLive) {
@@ -43,6 +46,9 @@ class Particle extends GameObject {
   }
   set lastTTLTick(millis) {
     this._lastTtlTick = millis;
+  }
+  set velocity(v) {
+    this._velocity = v;
   }
 }
 

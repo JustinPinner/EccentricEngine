@@ -16,7 +16,7 @@ class GameObject {
     this.maxStartupMillis = 500;  // <- tune if this.initDone is being triggered too soon or too late
 		this.engine.eventSystem.registerEvent(`${this.id}-Loaded`);
 		this.engine.eventSystem.addEventListener(`${this.id}-Loaded`, this.init.bind(this));
-		this.conf = conf;
+    this.conf = conf;
     this.conf.position = position;
 		this.coordinates = this.conf.position ? new Point2D(this.conf.position.x, this.conf.position.y) : {};
 		this.velocity = new Vector2D(
@@ -47,7 +47,7 @@ class GameObject {
   }
   get type() {
 		return this.constructor.name;
-	}
+  }
 	get centre() {
 		if (!this.coordinates) {
 			return undefined;
@@ -227,13 +227,24 @@ GameObject.prototype.setVelocity = function(newVel2d) {
 }
 
 GameObject.prototype.updatePosition = function() {
-	if (this.coordinates && this.velocity) {
+	if (this.coordinates && this.velocity && this.velocity.length > 0) {
 		this.coordinates.x += isNaN(this.velocity.x) ? 0 : this.velocity.x;
 		this.coordinates.y += isNaN(this.velocity.y) ? 0 : this.velocity.y;
 	}
 }
 
+GameObject.prototype.canCollideWith = function(that) {
+  return this !== that;
+}
+
 GameObject.prototype.collide = function(otherGameObject) {
+  const getCoords = function(obj) {
+    return obj.coordinates.origin ? obj.coordinates.origin : obj.coordinates
+  }
+
+  if (!this.canCollideWith(otherGameObject)) {
+    return;
+  }
 	if (this.collisionCentres.length == 0 || otherGameObject.collisionCentres.length == 0) {
 		return;
 	}
@@ -253,10 +264,18 @@ GameObject.prototype.collide = function(otherGameObject) {
       const theirCollisionCentre = otherGameObject.collisionCentres[theirCentre].scaled ?
       otherGameObject.collisionCentres[theirCentre].scaled : 
       otherGameObject.collisionCentres[theirCentre];
-			const dx = myCollisionCentre.x - theirCollisionCentre.x;
-			const dy = myCollisionCentre.y - theirCollisionCentre.y;
+
+      const x1 = getCoords(this).x + myCollisionCentre.x;
+      const y1 = getCoords(this).y + myCollisionCentre.y;
+      const x2 = getCoords(otherGameObject).x + theirCollisionCentre.x;
+      const y2 = getCoords(otherGameObject).y + theirCollisionCentre.y;
+
+			const dx = x1 - x2;
+      const dy = y1 - y2;
+
 			const distance = Math.sqrt((dx * dx) + (dy * dy));		
-			if (distance <= myCollisionCentre.radius + theirCollisionCentre.radius) {
+      
+      if (distance <= myCollisionCentre.radius + theirCollisionCentre.radius) {
         // TODO: implement as collision groups
         stopDetecting = true;
         
@@ -342,38 +361,41 @@ GameObject.prototype.collide = function(otherGameObject) {
 }
 
 GameObject.prototype.collisionDetect = function(x, y) {
+  const getCoords = function(obj) {
+    return obj.coordinates.centre ? obj.coordinates.centre : obj.coordinates
+  }
 	if (!this.canCollide) {
 		return;
 	}
   const self = this;
-  // eliminate anything that doesn't collide
-	const candidates = this.engine.objects.filter(function(obj) {
-    return obj !== self && 
-      obj.canCollide && 
-      (!isNaN(self.coordinates.centre.z)) &&
-      (!isNaN(obj.coordinates.centre.z)) &&
-      ((self.coordinates.centre && self.coordinates.centre.z) || 0) == ((obj.coordinates.centre && obj.coordinates.centre.z) || 0);
+  // remove anything that doesn't collide with this object
+  const collidables = this.engine.objects.filter(function(that) {
+    return that.canCollide && self.canCollideWith(that);
+  });
+  // remove anything not on the same z plane
+	const candidates = collidables.filter(function(that) {
+    return that !== self && ((getCoords(self).z) || 0) == ((getCoords(that).z) || 0);
   });
   // collect what's left and within local proximity
-  const localCandidates = candidates.filter(function(obj){
-		// draw a circle to enclose the whole object (self)
-		const selfCirc = {
-			x: self.coordinates.centre.x,
-			y: self.coordinates.centre.y,
+  const localCandidates = candidates.filter(function(that){
+    // draw a circle to enclose the whole object (self)
+		const thisCirc = {
+			x: getCoords(self).x,
+			y: getCoords(self).y,
 			r: (self.width > self.height ?  self.width : self.height) / 2
     };
     // and again for the collision candidate
-		const objCirc = {
-			x: obj.coordinates.centre.x,
-			y: obj.coordinates.centre.y,
-			r: (obj.width > obj.height ? obj.width : obj.height) / 2
+		const thatCirc = {
+			x: getCoords(that).x,
+			y: getCoords(that).y,
+			r: (that.width > that.height ? that.width : that.height) / 2
 		};
     // test for proximity
-    const dx = selfCirc.x - objCirc.x;
-		const dy = selfCirc.y - objCirc.y;
+    const dx = thisCirc.x - thatCirc.x;
+		const dy = thisCirc.y - thatCirc.y;
 		const distance = Math.sqrt((dx * dx) + (dy * dy));		
-	
-		return distance <= selfCirc.r + objCirc.r;
+  
+		return distance <= thisCirc.r + thatCirc.r;
 
   })
   // run fine-detail checks for any collision candidates
@@ -401,10 +423,8 @@ GameObject.prototype.update = function() {
 }
 
 GameObject.prototype.draw = function() {
-	if (!this.ready) return;
+	if (!this.ready || !this.canDraw || this.disposable) return;
 	if (!this.isOnScreen()) return;
-	if (this.disposable) return;
-  if (!this.canDraw) return;
 
   this.preDraw && this.preDraw();
 

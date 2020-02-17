@@ -34,36 +34,6 @@ Point3D.prototype.add = function(vector2D) {
   this.y += vector2D.y;
 }
 
-class Coordinate3D {
-  constructor(x, y, z) {
-    this._x = x;
-    this._y = y;
-    this._z = z;
-  }
-  get x() {
-    return this._x;
-  }
-  set x(val) {
-    this._x = val;
-  }
-  get y() {
-    return this._y;
-  }
-  set y(val) {
-    this._y = val;
-  }
-  get z() {
-    return this._z;
-  }
-  set z(val) {
-    this._z = val;
-  }
-};
-
-Coordinate3D.prototype.clone = function() {
-  return new Coordinate3D(this._x, this._y, this._z);
-}
-
 class Coordinates3D {
   constructor(x, y, z, w, h, d) {
     this._origin = new Coordinate3D(
@@ -132,6 +102,5 @@ Coordinates3D.prototype.rotate = function(degrees) {
 
 export { 
   Point3D,
-  Coordinate3D,
   Coordinates3D
 };

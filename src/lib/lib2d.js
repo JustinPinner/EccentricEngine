@@ -99,29 +99,6 @@ Vector2D.prototype.clone = function() {
   return new Vector2D(this._x, this._y);
 };
 
-class Coordinate2D extends Point2D {
-  constructor(point2D) {
-    super(point2D.x, point2D.y);
-  }
-  get point() {
-    return {x, y};
-  }
-  set point(point2D) {
-    this.x = point2D.x;
-    this.y = point2D.y;
-  }
-}
-
-Coordinate2D.prototype.rotate = function(centre, degrees) {
-  this.point = Math2D.rotatePoint(
-    centre.x, 
-    centre.y,
-    this._x,
-    this._y,
-    degrees
-  );
-};
-
 class Scrollable {
 	constructor(anchorObject, vx, vy, s) {
     this._scale = s || 1;
@@ -208,7 +185,6 @@ const Math2D = {
 export {
   Point2D,
   Vector2D,
-  Coordinate2D,
   Math2D,
   Scrollable
 };

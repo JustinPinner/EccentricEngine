@@ -1,6 +1,6 @@
 
 import { Point2D, Scrollable, Math2D } from '../lib/lib2d';
-import { Coordinate3D } from '../lib/lib3d';
+import { Coordinate3D } from '../lib/coordinate';
 import { Logger } from '../lib/logger';
 
 const defaultConfig = {
