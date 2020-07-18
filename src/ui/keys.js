@@ -140,8 +140,8 @@ KeyHandler.prototype.handleKeyUp = function(e) {
 const KeyProcessor = (pressedKey, isPressed, keyHandler) => {
   switch (pressedKey) {
     case Keys.SPACE:
-      if (keyHandler.gameEngine && keyHandler.gameEngine.eventSystem) {
-        keyHandler.gameEngine.eventSystem.dispatchEvent(keyHandler.gameEngine.id, {action: "SPACEPRESSED"});
+      if (keyHandler.gameEngine) {
+        keyHandler.gameEngine.dispatchEvent(keyHandler.gameEngine.id, {action: "SPACEPRESSED"});
       }
       break;
     case Keys.ENTER:

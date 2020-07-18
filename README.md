@@ -1,3 +1,6 @@
+# Caution: 2.0.0 is not stable
+This branch is a work in progress and currently far from usable. Please use one of the 1.x branches instead.
+
 # EccentricEngine
 A simple engine for Javascript games
 
@@ -37,3 +40,8 @@ There's also a fledgling [EccentricEngineDemos repo here](https://github.com/Jus
 * Added debugging to see what's going on inside events, timers and other engine functionality. Activate it by adding a `?debug` search param to your game url in your browser
 * Added a `Logger` class that sends debug info (see above) to the browser console
 * Changed the way that objects deregister their `xxx-Loaded` event - added a timed call to its `initDone` method. You now have 500ms to complete your custom initialisation code in game objects.
+
+2.0.0
+=====
+* Conversion to typescript
+

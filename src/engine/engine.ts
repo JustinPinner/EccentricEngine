@@ -1,7 +1,7 @@
 const uuidv4 = require('uuid/v4');
-import { Reactor } from '../lib/events';
-import { Audio } from '../lib/audio';
-import { Canvas2D } from '../environment/canvas';
+import { EventSystem, GameEvent, EventTrigger } from '../lib/events';
+import { AudioSystem } from '../lib/audio';
+import { Canvas } from '../environment/canvas';
 import { TouchInterface, TouchHandler } from '../ui/touch';
 import { KeyHandler } from '../ui/keys';
 import { GamepadHandler } from '../ui/gamepad';
@@ -10,62 +10,107 @@ import { ImageService } from '../utils/image';
 import { TimerSystem } from '../lib/timer';
 import { Formatter } from '../lib/format';
 import { Logger } from '../lib/logger';
+import { GameObject } from '../model/gameObject';
+import { Configuration } from './configuration';
+import { config } from 'process';
+import { Coordinate2d } from '../lib/coordinate';
+import { Point2d } from '../lib/point2d';
 
 class Engine {
-  constructor(configuration) {
-    this.id = 'ENGINE';
+  private id: string = 'ENGINE';
+  private eventSystem: EventSystem;
+  private audioSystem: AudioSystem;
+  private timerSystem: TimerSystem;
+  private imageService: ImageService;
+  private canvasses: Canvas[];
+  private hasTouchSupport: boolean = (window.navigator && window.navigator.maxTouchPoints > 0);
+  private keyHandler: KeyHandler;
+  private gamepadHandler: GamepadHandler;
+  private touchHandler: TouchHandler;
+  private gameObjects: GameObject[];
+  private ticks: number = 0;
+  private formatter: Formatter;
+  private logger: Logger;
+  private transmissions: [];
+  private onSetup: () => boolean;
+  private onStart: () => boolean;
+  private onTick: () => boolean;
+  private timing: object = {};
+  private windowInterval: number;
+  private windowTimeout: number;
+
+  private debug?: boolean;
+
+  private receive(rx: GameEvent): void {
+    switch (rx.trigger.name) {
+      case ('ack'):
+        // our message was received by the recipient
+        if (this.transmissions[`${rx.senderId}.${rx.trigger.name}`]){
+          delete this.transmissions[`${rx.senderId}.${rx.trigger.name}`]
+        }
+        break;
+      default:
+        if (rx.trigger.action) {
+          rx.trigger.fire();
+        }
+        break;
+    };   
+    if (rx.acknowledge) {
+      // generate an acknwledgement
+      const ackThis: boolean = false;
+      const trigger: EventTrigger = new EventTrigger('ack', () => { return true; });
+      const ack: GameEvent = new GameEvent(this.id, rx.senderId, trigger, ackThis);
+      this.transmit(ack);
+    }
+  };
+
+  private transmit(event: GameEvent, args?: any[]): void {
+    if (event.acknowledge) {
+      // we expect an ack for this message - push it to the watch list
+      this.transmissions[`${event.recipientId}.${event.trigger.name}`] = event;  
+    }
+    this.dispatchEvent(event.recipientId, event.trigger.name, args);  
+  };
+
+  constructor(configuration: Configuration) {
     this.formatter = new Formatter();
-    this.config = configuration;  // should be an instantiated Config or a descendent thereof
-    this.debug = this.config.debugEngine || false;
-    this.eventSystem = new Reactor(this.debug);
-    this.audioSystem = new Audio();
-    this.timers = new TimerSystem(this, this.debug);
-    this.images = new ImageService(this.config.game.defaultImagePath);
+    this.debug = configuration.debug;
+    this.eventSystem = new EventSystem(this.debug);
+    this.audioSystem = new AudioSystem();
+    this.timerSystem = new TimerSystem(this, this.debug);
+    this.imageService = new ImageService(configuration.imagePath);
 		this.eventSystem.registerEvent(this.id);
-		this.eventSystem.addEventListener(this.id, this.config.game.eventListener.bind(this, this));
-    this.onSetup = this.config.game.lifeCycle.onSetup;
-    this.onStart = this.config.game.lifeCycle.onStart;
-    this.onTick = this.config.game.lifeCycle.onTick;
-    this.playerObj = null;
-    this.loggedEvents = [];
+		this.eventSystem.addEventListener(this.id, 'engine', this.receive.bind(this, this));
+    this.onSetup = configuration.lifeCycle.onSetup;
+    this.onStart = configuration.lifeCycle.onStart;
+    this.onTick = configuration.lifeCycle.onTick;
     this.logger = new Logger(this);
-    this.ticks = 0;   
-    this.hasTouchSupport = (window.navigator && window.navigator.maxTouchPoints > 0);
-    this.gameObjects = [];
-    this.canvasses = [];
     this.keyHandler = null;
-    this.gamepadHandler = this.config.game.enableGamepadUI ? new GamepadHandler() : undefined;
-    this.touchHandler = (this.config.game.enableTouchUI === true || this.config.game.enableTouchUI === 'auto' && this.hasTouchSupport) ? new TouchHandler(this.config.game.touchUI) : undefined;
-    this.timing = {};
-    this.windowInterval = undefined;
-    this.windowTimeout = undefined;
-    for (const cnv in this.config.game.canvasses) {
-      const canvas = new Canvas2D(this.config.game.canvasses[cnv], this);
-      if (canvas) {
-        this.canvasses.push(canvas);
-      }
-    }    
+    if (configuration.enableGamepadUI) {
+      this.gamepadHandler = new GamepadHandler();
+    }
+    if (configuration.enableTouchUI && this.hasTouchSupport) {
+      this.touchHandler = new TouchHandler();
+    }
+    configuration.canvasses.forEach((canvas) => {
+      this.canvasses.push(canvas);
+    });
     // default canvas if none sent in config
     if (this.canvasses.length < 1) {
-      const canvas = new Canvas2D({
-        x: 0,
-        y: 0,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        wrapper: {
-          selector: '#canvasdiv',
-          style: {
-            backgroundColour: '#000000',
-          }
-        },
-        canvas: {
-          selector: '#canvas',
-        },
-        alias: 'canvas',  
-      }, this);
+      const canvas = new Canvas(
+        new Point2d(0,0),
+        window.innerWidth,
+        window.innerHeight,
+        '#canvasdiv',
+        'transparent',
+        '#000000',
+        '#canvas',
+        'canvas',  
+        this.imageService
+      );
       this.canvasses.push(canvas);
     }
-  }
+  };
 
   /* getters */
   get isReady() {
@@ -84,40 +129,58 @@ class Engine {
     return this.keyHandler;
   }
   get player() {
-    return this.playerObj;
+    return this.objects.filter((obj: GameObject) => { return obj.isPlayer; });
   }
+  
   get focussedObject() {
-    const objs = this.objects.filter(function(o) { return o.isFocussed; });
-    if (objs.length > 1) this.log(`WARN: ${objs.length} objects have focus`);
+    const objs = this.objects.filter((obj: GameObject) => { return obj.isFocussed; });
+    if (objs.length > 1) this.logger.logAction(`WARN: ${objs.length} objects have focus`);
     return objs.length > 0 ? objs[0] : undefined;
-  }
+  };
 
   /* setters */
-  set player(player) {
-    this.playerObj = player;
-  }
+
+  registerEvent(eventName: string) {
+    this.eventSystem.registerEvent(eventName);
+  };  
+
+  addEventListener(eventName: string, triggerName: string, trigger: EventTrigger) {
+    this.eventSystem.addEventListener(eventName, triggerName, trigger);
+  };
+  
+  deRegisterEvent(eventName: string) {
+    this.eventSystem.deRegisterEvent(eventName);
+  };
+
+  dispatchEvent(eventName: string, triggerName?: string, triggerArgs?: any[]) {
+    this.eventSystem.dispatchEvent(eventName, triggerName, triggerArgs);
+  };
+
+  timingStart(identity: string) {
+    const now = Date.now();
+    if (!this.timing[identity]) {
+      this.timing[identity] = {};
+    }
+    const lastTime = (this.timing[identity] && this.timing[identity].last) ? this.timing[identity].last : now;
+    const interval = now - lastTime;
+    this.timing[identity].last = now;
+    this.timing[identity].interval = interval;
+  };
+  
+  timingStop(identity: string) {
+    const now = Date.now();
+    if (!this.timing[identity]) {
+      return;
+    }
+    const lastTime = this.timing[identity].last;
+    this.timing[identity].duration = now - lastTime;
+  };
   
 }
 
-Engine.prototype.timingStart = function(identity) {
-  const now = Date.now();
-  if (!this.timing[identity]) {
-    this.timing[identity] = {};
-  }
-  const lastTime = (this.timing[identity] && this.timing[identity].last) ? this.timing[identity].last : now;
-  const interval = now - lastTime;
-  this.timing[identity].last = now;
-  this.timing[identity].interval = interval;
-}
 
-Engine.prototype.timingStop = function(identity) {
-  const now = Date.now();
-  if (!this.timing[identity]) {
-    return;
-  }
-  const lastTime = this.timing[identity].last;
-  this.timing[identity].duration = now - lastTime;
-}
+
+
 
 Engine.prototype.canvas = function(alias) {
   const canvs = this.canvasses.filter(function(canvas){return canvas.alias === alias;});
@@ -223,13 +286,13 @@ Engine.prototype.setup = function() {
   this.onStart.bind(this, this);
   this.onTick.bind(this, this);
   
-  for (goType in this.config.gameObjectTypes) {
-    for (objDef in this.config.gameObjectTypes[goType]) {
-      const gameObject = this.config.gameObjectTypes[goType][objDef];
-      sourceImagePath = gameObject.sprite.sheet ? gameObject.sprite.sheet.path : gameObject.sprite.image.path;
-      this.images.load(sourceImagePath);  
-    }
-  }
+  // for (goType in this.config.gameObjectTypes) {
+  //   for (objDef in this.config.gameObjectTypes[goType]) {
+  //     const gameObject = this.config.gameObjectTypes[goType][objDef];
+  //     sourceImagePath = gameObject.sprite.sheet ? gameObject.sprite.sheet.path : gameObject.sprite.image.path;
+  //     this.images.load(sourceImagePath);  
+  //   }
+  // }
   
   for (effect in this.config.game.soundEffects) {
     this.audioSystem.addEffect(new AudioEffect(this.config.game.soundEffects[effect]));
@@ -296,11 +359,11 @@ Engine.prototype.tick = function(frame) {
   // clean out event listeners for dead objects
   for (const obj in deadAndAlive[0]) {
     const gameObject = deadAndAlive[0][obj];
-    if (this.eventSystem.events[`${gameObject.id}`]) {
-      this.eventSystem.deRegisterEvent(`${gameObject.id}`);
+    if (this._eventSystem.events[`${gameObject.id}`]) {
+      this._eventSystem.deRegisterEvent(`${gameObject.id}`);
     }
-    if (this.eventSystem.events[`${gameObject.id}FSM`]) {
-      this.eventSystem.deRegisterEvent(`${gameObject.id}FSM`);
+    if (this._eventSystem.events[`${gameObject.id}FSM`]) {
+      this._eventSystem.deRegisterEvent(`${gameObject.id}FSM`);
     }
   }
 

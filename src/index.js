@@ -6,7 +6,7 @@ export * from './lib/lib3d';
 export * from './lib/audio';
 export * from './lib/events';
 export * from './lib/format';
-export * from './lib/fsm';
+export * from './lib/stateMachine';
 export * from './lib/math';
 export * from './lib/partition';
 export * from './model/gameObject';

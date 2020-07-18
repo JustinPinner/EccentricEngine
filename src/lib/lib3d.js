@@ -1,38 +1,5 @@
-import { Point2D } from './lib2d';
+import { Point2d } from './point2d';
 
-class Point3D extends Point2D {
-  constructor(x, y, z) {
-      super(x, y);
-      this._z = z;
-  }
-  get x() {
-      return this._x;
-  }
-  get y() {
-      return this._y;
-  }
-  get z() {
-      return this._z;
-  }
-  set x(val) {
-      this._x = val;
-  }
-  set y(val) {
-      this._y = val;
-  }
-  set z(val) {
-      this._z = val;
-  }
-}
-
-Point3D.prototype.clone = function() {
-  return new Point3D(this._x, this._y, this._z);
-}
-
-Point3D.prototype.add = function(vector2D) {
-  this.x += vector2D.x;
-  this.y += vector2D.y;
-}
 
 class Coordinates3D {
   constructor(x, y, z, w, h, d) {
